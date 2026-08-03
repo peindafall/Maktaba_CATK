@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import '../../../core/constants/app_colors.dart';
-import '../presentation/audio_provider.dart';
-import '../../../core/utils/duration_formatter.dart';
+import '../../../../core/constants/app_colors.dart';
+import '../audio_provider.dart';
+import '../../../../core/utils/duration_formatter.dart';
 
 class MiniPlayer extends ConsumerWidget {
   const MiniPlayer({super.key});

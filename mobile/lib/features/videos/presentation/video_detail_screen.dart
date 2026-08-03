@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:youtube_player_flutter/youtube_player_flutter.dart';
+import 'package:youtube_player_iframe/youtube_player_iframe.dart';
 import '../../../core/constants/app_colors.dart';
 import 'videos_provider.dart';
 
@@ -20,7 +20,7 @@ class _VideoDetailScreenState
 
   @override
   void dispose() {
-    _controller?.dispose();
+    _controller?.close();
     super.dispose();
   }
 
@@ -40,20 +40,16 @@ class _VideoDetailScreenState
             child: Text('Impossible de charger cette émission')),
       ),
       data: (video) {
-        _controller ??= YoutubePlayerController(
-          initialVideoId: video.youtubeId,
-          flags: const YoutubePlayerFlags(
-            autoPlay: true,
+        _controller ??= YoutubePlayerController.fromVideoId(
+          videoId: video.youtubeId,
+          autoPlay: true,
+          params: const YoutubePlayerParams(
             mute: false,
           ),
         );
 
-        return YoutubePlayerBuilder(
-          player: YoutubePlayer(
-            controller: _controller!,
-            showVideoProgressIndicator: true,
-            progressIndicatorColor: AppColors.primaryGreen,
-          ),
+        return YoutubePlayerScaffold(
+          controller: _controller!,
           builder: (context, player) => Scaffold(
             appBar: AppBar(
               title: Text(
