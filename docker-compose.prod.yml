@@ -1,0 +1,111 @@
+version: '3.9'
+
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: maktaba_db_prod
+    environment:
+      POSTGRES_DB: ${DB_NAME}
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+    volumes:
+      - postgres_data_prod:/var/lib/postgresql/data
+    networks:
+      - maktaba_network_prod
+    restart: unless-stopped
+
+  redis:
+    image: redis:7-alpine
+    container_name: maktaba_redis_prod
+    command: redis-server --appendonly yes --requirepass ${REDIS_PASSWORD}
+    volumes:
+      - redis_data_prod:/data
+    networks:
+      - maktaba_network_prod
+    restart: unless-stopped
+
+  minio:
+    image: minio/minio:latest
+    container_name: maktaba_minio_prod
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ACCESS_KEY}
+      MINIO_ROOT_PASSWORD: ${MINIO_SECRET_KEY}
+    volumes:
+      - minio_data_prod:/data
+    networks:
+      - maktaba_network_prod
+    restart: unless-stopped
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+      target: production
+    container_name: maktaba_backend_prod
+    command: gunicorn config.wsgi:application --bind 0.0.0.0:8000 --workers 4 --worker-class gthread --threads 2 --timeout 120
+    volumes:
+      - media_data_prod:/app/media
+      - static_data_prod:/app/staticfiles
+    env_file:
+      - .env.prod
+    depends_on:
+      - db
+      - redis
+    networks:
+      - maktaba_network_prod
+    restart: unless-stopped
+
+  celery_worker:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+      target: production
+    container_name: maktaba_celery_worker_prod
+    command: celery -A config worker -l warning -Q default,high_priority --concurrency 4
+    env_file:
+      - .env.prod
+    depends_on:
+      - backend
+      - redis
+    networks:
+      - maktaba_network_prod
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      target: production
+    container_name: maktaba_frontend_prod
+    networks:
+      - maktaba_network_prod
+
+  nginx:
+    image: nginx:1.27-alpine
+    container_name: maktaba_nginx_prod
+    volumes:
+      - ./nginx/nginx.prod.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/ssl:/etc/nginx/ssl:ro
+      - static_data_prod:/var/www/static:ro
+      - media_data_prod:/var/www/media:ro
+    ports:
+      - "80:80"
+      - "443:443"
+    depends_on:
+      - backend
+      - frontend
+    networks:
+      - maktaba_network_prod
+    restart: unless-stopped
+
+volumes:
+  postgres_data_prod:
+  redis_data_prod:
+  minio_data_prod:
+  media_data_prod:
+  static_data_prod:
+
+networks:
+  maktaba_network_prod:
+    driver: bridge

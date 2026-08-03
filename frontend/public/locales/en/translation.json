@@ -1,0 +1,124 @@
+{
+  "nav": {
+    "home": "Home",
+    "teachings": "Teachings",
+    "audio": "Audio",
+    "videos": "Videos",
+    "questions": "Q&A",
+    "search": "Search",
+    "login": "Login",
+    "logout": "Logout",
+    "profile": "My Profile"
+  },
+  "home": {
+    "hero_title": "Digital Library of Teachings",
+    "hero_subtitle": "By Professor Cheikh Ahmet Tidiane KEBE",
+    "hero_cta": "Explore Teachings",
+    "featured_teachings": "Featured Teachings",
+    "latest_questions": "Latest Questions",
+    "popular_audios": "Popular Audios",
+    "latest_videos": "Latest Videos",
+    "professor_section": "About the Professor",
+    "categories": "Categories",
+    "stats_teachings": "Teachings",
+    "stats_audios": "Recordings",
+    "stats_videos": "Videos"
+  },
+  "teachings": {
+    "title": "Teachings",
+    "download": "Download PDF",
+    "read_online": "Read Online",
+    "views": "views",
+    "downloads": "downloads",
+    "categories": "Categories",
+    "filter_by": "Filter by",
+    "sort_by": "Sort by",
+    "no_teachings": "No teachings found",
+    "featured": "Featured",
+    "all_categories": "All categories"
+  },
+  "audio": {
+    "title": "Audio",
+    "play": "Play",
+    "pause": "Pause",
+    "duration": "Duration",
+    "plays": "plays",
+    "no_audios": "No audio found",
+    "now_playing": "Now Playing"
+  },
+  "videos": {
+    "title": "YouTube Videos",
+    "watch": "Watch",
+    "open_youtube": "Open on YouTube",
+    "no_videos": "No videos found"
+  },
+  "questions": {
+    "title": "Questions & Answers on the Tijaniyya",
+    "answer": "Answer",
+    "transcript": "Transcript",
+    "listen_answer": "Listen to answer",
+    "no_questions": "No questions found",
+    "keywords": "Keywords"
+  },
+  "search": {
+    "placeholder": "Search in teachings...",
+    "all_types": "All types",
+    "results_found": "{{count}} results found",
+    "no_results": "No results found",
+    "type_teachings": "Teachings",
+    "type_audios": "Audio",
+    "type_videos": "Videos",
+    "type_questions": "Questions"
+  },
+  "common": {
+    "loading": "Loading...",
+    "error": "An error occurred",
+    "retry": "Retry",
+    "see_all": "See all",
+    "back": "Back",
+    "share": "Share",
+    "favorite": "Favorite",
+    "language": "Language",
+    "dark_mode": "Dark mode",
+    "page": "Page",
+    "of": "of",
+    "previous": "Previous",
+    "next": "Next",
+    "close": "Close",
+    "submit": "Submit",
+    "cancel": "Cancel",
+    "save": "Save",
+    "edit": "Edit",
+    "delete": "Delete",
+    "confirm": "Confirm"
+  },
+  "auth": {
+    "login_title": "Login",
+    "register_title": "Register",
+    "email": "Email",
+    "password": "Password",
+    "confirm_password": "Confirm Password",
+    "username": "Username",
+    "login_btn": "Login",
+    "register_btn": "Register",
+    "no_account": "No account?",
+    "has_account": "Already have an account?",
+    "forgot_password": "Forgot password?",
+    "login_success": "Login successful",
+    "logout_success": "Logout successful"
+  },
+  "profile": {
+    "title": "My Profile",
+    "my_favorites": "My Favorites",
+    "settings": "Settings",
+    "preferred_language": "Preferred Language",
+    "change_password": "Change Password"
+  },
+  "errors": {
+    "not_found": "Page Not Found",
+    "not_found_desc": "The page you are looking for does not exist.",
+    "go_home": "Go Home",
+    "network_error": "Network error. Check your connection.",
+    "unauthorized": "You must be logged in to access this page."
+  }
+}

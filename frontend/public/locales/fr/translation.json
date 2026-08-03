@@ -1,0 +1,124 @@
+{
+  "nav": {
+    "home": "Accueil",
+    "teachings": "Enseignements",
+    "audio": "Audios",
+    "videos": "Émissions",
+    "questions": "Questions/Réponses",
+    "search": "Rechercher",
+    "login": "Connexion",
+    "logout": "Déconnexion",
+    "profile": "Mon Profil"
+  },
+  "home": {
+    "hero_title": "Bibliothèque Numérique des Enseignements",
+    "hero_subtitle": "Du Professeur Cheikh Ahmet Tidiane KEBE",
+    "hero_cta": "Explorer les Enseignements",
+    "featured_teachings": "Enseignements en Vedette",
+    "latest_questions": "Dernières Questions",
+    "popular_audios": "Audios Populaires",
+    "latest_videos": "Dernières Émissions",
+    "professor_section": "À Propos du Professeur",
+    "categories": "Catégories",
+    "stats_teachings": "Enseignements",
+    "stats_audios": "Enregistrements",
+    "stats_videos": "Émissions"
+  },
+  "teachings": {
+    "title": "Enseignements",
+    "download": "Télécharger le PDF",
+    "read_online": "Lire en ligne",
+    "views": "vues",
+    "downloads": "téléchargements",
+    "categories": "Catégories",
+    "filter_by": "Filtrer par",
+    "sort_by": "Trier par",
+    "no_teachings": "Aucun enseignement trouvé",
+    "featured": "En vedette",
+    "all_categories": "Toutes les catégories"
+  },
+  "audio": {
+    "title": "Audios",
+    "play": "Écouter",
+    "pause": "Pause",
+    "duration": "Durée",
+    "plays": "écoutes",
+    "no_audios": "Aucun audio trouvé",
+    "now_playing": "Lecture en cours"
+  },
+  "videos": {
+    "title": "Émissions YouTube",
+    "watch": "Regarder",
+    "open_youtube": "Ouvrir sur YouTube",
+    "no_videos": "Aucune émission trouvée"
+  },
+  "questions": {
+    "title": "Questions / Réponses sur la Tarikha Tidiane",
+    "answer": "Réponse",
+    "transcript": "Transcription",
+    "listen_answer": "Écouter la réponse",
+    "no_questions": "Aucune question trouvée",
+    "keywords": "Mots-clés"
+  },
+  "search": {
+    "placeholder": "Rechercher dans les enseignements...",
+    "all_types": "Tous les types",
+    "results_found": "{{count}} résultats trouvés",
+    "no_results": "Aucun résultat trouvé",
+    "type_teachings": "Enseignements",
+    "type_audios": "Audios",
+    "type_videos": "Vidéos",
+    "type_questions": "Questions"
+  },
+  "common": {
+    "loading": "Chargement...",
+    "error": "Une erreur s'est produite",
+    "retry": "Réessayer",
+    "see_all": "Voir tout",
+    "back": "Retour",
+    "share": "Partager",
+    "favorite": "Favori",
+    "language": "Langue",
+    "dark_mode": "Mode sombre",
+    "page": "Page",
+    "of": "sur",
+    "previous": "Précédent",
+    "next": "Suivant",
+    "close": "Fermer",
+    "submit": "Envoyer",
+    "cancel": "Annuler",
+    "save": "Sauvegarder",
+    "edit": "Modifier",
+    "delete": "Supprimer",
+    "confirm": "Confirmer"
+  },
+  "auth": {
+    "login_title": "Connexion",
+    "register_title": "Inscription",
+    "email": "Email",
+    "password": "Mot de passe",
+    "confirm_password": "Confirmer le mot de passe",
+    "username": "Nom d'utilisateur",
+    "login_btn": "Se connecter",
+    "register_btn": "S'inscrire",
+    "no_account": "Pas de compte ?",
+    "has_account": "Déjà un compte ?",
+    "forgot_password": "Mot de passe oublié ?",
+    "login_success": "Connexion réussie",
+    "logout_success": "Déconnexion réussie"
+  },
+  "profile": {
+    "title": "Mon Profil",
+    "my_favorites": "Mes Favoris",
+    "settings": "Paramètres",
+    "preferred_language": "Langue préférée",
+    "change_password": "Changer le mot de passe"
+  },
+  "errors": {
+    "not_found": "Page non trouvée",
+    "not_found_desc": "La page que vous recherchez n'existe pas.",
+    "go_home": "Retour à l'accueil",
+    "network_error": "Erreur réseau. Vérifiez votre connexion.",
+    "unauthorized": "Vous devez être connecté pour accéder à cette page."
+  }
+}

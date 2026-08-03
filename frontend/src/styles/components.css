@@ -1,0 +1,42 @@
+/* Additional component styles */
+
+/* Audio player overrides */
+.rhap_container {
+  background: var(--surface) !important;
+  box-shadow: none !important;
+  border-radius: 1rem !important;
+}
+
+.rhap_progress-filled {
+  background: var(--primary-green) !important;
+}
+
+.rhap_progress-indicator {
+  background: var(--primary-green) !important;
+}
+
+.rhap_button-clear {
+  color: var(--primary-green) !important;
+}
+
+/* PDF viewer overrides */
+.rpv-core__page-layer {
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+/* RTL adjustments */
+[dir="rtl"] .rtl-flip {
+  transform: scaleX(-1);
+}
+
+/* Dark mode media query fallback */
+@media (prefers-color-scheme: dark) {
+  :root:not(.light) {
+    --background: #121212;
+    --surface: #1E1E1E;
+    --text-primary: #F5F5F5;
+    --text-secondary: #AAAAAA;
+    --border-light: #2A2A2A;
+  }
+}

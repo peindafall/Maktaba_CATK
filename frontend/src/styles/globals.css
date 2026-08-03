@@ -1,0 +1,111 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Amiri:ital,wght@0,400;0,700;1,400&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --primary-green: #1EA478;
+    --primary-green-light: #1FA645;
+    --primary-green-dark: #114D0D;
+    --gold-primary: #BF8B28;
+    --gold-light: #FEFBA4;
+    --gold-soft: #FDEF72;
+    --gold-dark: #A67723;
+    --background: #F8F9FA;
+    --surface: #FFFFFF;
+    --text-primary: #1A1A1A;
+    --text-secondary: #666666;
+    --border-light: #EAEAEA;
+  }
+
+  .dark {
+    --background: #121212;
+    --surface: #1E1E1E;
+    --text-primary: #F5F5F5;
+    --text-secondary: #AAAAAA;
+    --border-light: #2A2A2A;
+  }
+
+  body {
+    @apply bg-[var(--background)] text-[var(--text-primary)] transition-colors duration-200;
+    font-family: 'Inter', system-ui, sans-serif;
+  }
+
+  [lang="ar"],
+  [dir="rtl"] {
+    font-family: 'Amiri', serif;
+  }
+
+  html {
+    scroll-behavior: smooth;
+  }
+
+  ::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: var(--background);
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: var(--primary-green);
+    border-radius: 3px;
+  }
+}
+
+@layer components {
+  .btn-primary {
+    @apply bg-primary text-white px-6 py-3 rounded-2xl font-semibold
+           hover:bg-primary-dark transition-all duration-200
+           shadow-lg hover:shadow-xl active:scale-95 cursor-pointer;
+  }
+
+  .btn-gold {
+    @apply bg-gold text-white px-6 py-3 rounded-2xl font-semibold
+           hover:bg-gold-dark transition-all duration-200
+           shadow-lg hover:shadow-xl active:scale-95 cursor-pointer;
+  }
+
+  .btn-outline {
+    @apply border-2 border-primary text-primary px-6 py-3 rounded-2xl font-semibold
+           hover:bg-primary hover:text-white transition-all duration-200
+           active:scale-95 cursor-pointer;
+  }
+
+  .card {
+    @apply bg-[var(--surface)] rounded-3xl shadow-sm border border-[var(--border-light)]
+           hover:shadow-md transition-all duration-200;
+  }
+
+  .gradient-primary {
+    background: linear-gradient(135deg, #1EA478, #114D0D);
+  }
+
+  .gradient-gold {
+    background: linear-gradient(135deg, #BF8B28, #FEFBA4, #A67723);
+  }
+
+  .text-gradient-primary {
+    @apply bg-clip-text text-transparent;
+    background: linear-gradient(135deg, #1EA478, #114D0D);
+  }
+
+  .text-gradient-gold {
+    @apply bg-clip-text text-transparent;
+    background: linear-gradient(135deg, #BF8B28, #A67723);
+  }
+
+  .section-title {
+    @apply text-2xl font-bold text-[var(--text-primary)] mb-6;
+  }
+
+  .input-base {
+    @apply w-full px-4 py-3 rounded-2xl border border-[var(--border-light)]
+           bg-[var(--surface)] text-[var(--text-primary)]
+           focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary
+           transition-all duration-200 placeholder:text-[var(--text-secondary)];
+  }
+}

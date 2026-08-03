@@ -1,0 +1,124 @@
+{
+  "nav": {
+    "home": "الرئيسية",
+    "teachings": "التعاليم",
+    "audio": "الصوتيات",
+    "videos": "الفيديوهات",
+    "questions": "أسئلة وأجوبة",
+    "search": "البحث",
+    "login": "تسجيل الدخول",
+    "logout": "تسجيل الخروج",
+    "profile": "ملفي الشخصي"
+  },
+  "home": {
+    "hero_title": "المكتبة الرقمية للتعاليم",
+    "hero_subtitle": "للأستاذ الشيخ أحمد تيجان كيبي",
+    "hero_cta": "استكشاف التعاليم",
+    "featured_teachings": "التعاليم المميزة",
+    "latest_questions": "آخر الأسئلة",
+    "popular_audios": "الصوتيات الشائعة",
+    "latest_videos": "آخر الفيديوهات",
+    "professor_section": "نبذة عن الأستاذ",
+    "categories": "التصنيفات",
+    "stats_teachings": "التعاليم",
+    "stats_audios": "التسجيلات",
+    "stats_videos": "الفيديوهات"
+  },
+  "teachings": {
+    "title": "التعاليم",
+    "download": "تحميل PDF",
+    "read_online": "قراءة عبر الإنترنت",
+    "views": "مشاهدة",
+    "downloads": "تحميل",
+    "categories": "التصنيفات",
+    "filter_by": "تصفية حسب",
+    "sort_by": "ترتيب حسب",
+    "no_teachings": "لم يتم العثور على تعاليم",
+    "featured": "مميز",
+    "all_categories": "جميع التصنيفات"
+  },
+  "audio": {
+    "title": "الصوتيات",
+    "play": "تشغيل",
+    "pause": "إيقاف مؤقت",
+    "duration": "المدة",
+    "plays": "استماع",
+    "no_audios": "لم يتم العثور على صوتيات",
+    "now_playing": "يعزف الآن"
+  },
+  "videos": {
+    "title": "فيديوهات يوتيوب",
+    "watch": "مشاهدة",
+    "open_youtube": "فتح على يوتيوب",
+    "no_videos": "لم يتم العثور على فيديوهات"
+  },
+  "questions": {
+    "title": "أسئلة وأجوبة حول الطريقة التيجانية",
+    "answer": "الإجابة",
+    "transcript": "النص",
+    "listen_answer": "الاستماع إلى الإجابة",
+    "no_questions": "لم يتم العثور على أسئلة",
+    "keywords": "الكلمات المفتاحية"
+  },
+  "search": {
+    "placeholder": "البحث في التعاليم...",
+    "all_types": "جميع الأنواع",
+    "results_found": "{{count}} نتيجة موجودة",
+    "no_results": "لم يتم العثور على نتائج",
+    "type_teachings": "التعاليم",
+    "type_audios": "الصوتيات",
+    "type_videos": "الفيديوهات",
+    "type_questions": "الأسئلة"
+  },
+  "common": {
+    "loading": "جارٍ التحميل...",
+    "error": "حدث خطأ",
+    "retry": "إعادة المحاولة",
+    "see_all": "رؤية الكل",
+    "back": "رجوع",
+    "share": "مشاركة",
+    "favorite": "مفضلة",
+    "language": "اللغة",
+    "dark_mode": "الوضع الداكن",
+    "page": "الصفحة",
+    "of": "من",
+    "previous": "السابق",
+    "next": "التالي",
+    "close": "إغلاق",
+    "submit": "إرسال",
+    "cancel": "إلغاء",
+    "save": "حفظ",
+    "edit": "تعديل",
+    "delete": "حذف",
+    "confirm": "تأكيد"
+  },
+  "auth": {
+    "login_title": "تسجيل الدخول",
+    "register_title": "إنشاء حساب",
+    "email": "البريد الإلكتروني",
+    "password": "كلمة المرور",
+    "confirm_password": "تأكيد كلمة المرور",
+    "username": "اسم المستخدم",
+    "login_btn": "تسجيل الدخول",
+    "register_btn": "إنشاء حساب",
+    "no_account": "ليس لديك حساب؟",
+    "has_account": "لديك حساب بالفعل؟",
+    "forgot_password": "نسيت كلمة المرور؟",
+    "login_success": "تم تسجيل الدخول بنجاح",
+    "logout_success": "تم تسجيل الخروج بنجاح"
+  },
+  "profile": {
+    "title": "ملفي الشخصي",
+    "my_favorites": "مفضلاتي",
+    "settings": "الإعدادات",
+    "preferred_language": "اللغة المفضلة",
+    "change_password": "تغيير كلمة المرور"
+  },
+  "errors": {
+    "not_found": "الصفحة غير موجودة",
+    "not_found_desc": "الصفحة التي تبحث عنها غير موجودة.",
+    "go_home": "العودة للرئيسية",
+    "network_error": "خطأ في الشبكة. تحقق من اتصالك.",
+    "unauthorized": "يجب تسجيل الدخول للوصول إلى هذه الصفحة."
+  }
+}
