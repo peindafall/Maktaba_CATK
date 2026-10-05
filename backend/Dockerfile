@@ -11,7 +11,7 @@ RUN echo "deb http://deb.debian.org/debian/ bookworm main contrib non-free" > /e
     echo "deb http://deb.debian.org/debian/ bookworm-updates main contrib non-free" >> /etc/apt/sources.list && \
     echo "deb http://security.debian.org/debian-security bookworm-security main contrib non-free" >> /etc/apt/sources.list
 
-# Installation des dépendances système (SANS libmagic1)
+# Installation des dépendances système
 RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
     libpq-dev \
@@ -31,9 +31,14 @@ FROM base AS production
 COPY requirements/ requirements/
 RUN pip install -r requirements/production.txt
 COPY . .
-RUN DJANGO_SETTINGS_MODULE=config.settings.production python manage.py collectstatic --noinput
-RUN DJANGO_SETTINGS_MODULE=config.settings.production python manage.py migrate --noinput
+
+# Créer l'utilisateur non-root
 RUN addgroup --system appgroup && adduser --system --group appuser
+
+# PAS de migrate ni collectstatic ICI
+# Ils seront faits au démarrage via start.sh
+
 USER appuser
 EXPOSE 8000
-CMD ["gunicorn", "config.wsgi:application", "--bind", "0.0.0.0:8000", "--workers", "2", "--timeout", "120"]
+
+CMD ["./start.sh"]
