@@ -32,6 +32,7 @@ COPY requirements/ requirements/
 RUN pip install -r requirements/production.txt
 COPY . .
 RUN DJANGO_SETTINGS_MODULE=config.settings.production python manage.py collectstatic --noinput
+RUN DJANGO_SETTINGS_MODULE=config.settings.production python manage.py migrate --noinput
 RUN addgroup --system appgroup && adduser --system --group appuser
 USER appuser
 EXPOSE 8000
