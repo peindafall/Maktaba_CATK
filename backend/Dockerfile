@@ -35,8 +35,9 @@ COPY . .
 # Créer l'utilisateur non-root
 RUN addgroup --system appgroup && adduser --system --group appuser
 
-# PAS de migrate ni collectstatic ICI
-# Ils seront faits au démarrage via start.sh
+# Créer les dossiers et donner les permissions à appuser
+RUN mkdir -p /app/staticfiles /app/media && \
+    chown -R appuser:appgroup /app
 
 USER appuser
 EXPOSE 8000
