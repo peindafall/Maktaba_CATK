@@ -88,14 +88,15 @@ export interface Question {
 
 export interface Answer {
   id: string;
-  audio_file: string;
+  audio_url: string;
+  audio_file?: string;
   duration: string | null;
   transcript_fr: string;
   transcript_en: string;
   transcript_ar: string;
   language: string;
+  created_at: string;
 }
-
 export interface User {
   id: string;
   email: string;

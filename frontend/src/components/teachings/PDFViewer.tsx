@@ -16,17 +16,16 @@ export const PDFViewer = ({ fileUrl, height }: PDFViewerProps) => {
       <Toolbar>
         {(slots) => (
           <>
-            {slots.zoomOut}
-            {slots.zoomIn}
+            {slots.ZoomOut}
+            {slots.ZoomIn}
             <span className="mx-2 text-xs">
-              {slots.currentPageInput} / {slots.numPages}
+              {slots.CurrentPageInput()}
             </span>
-            {slots.goToNextPage}
-            {slots.goToPreviousPage}
-            {slots.rotateClockwise}
-            {slots.fullScreen}
-            {/* On ne rend pas slots.download — c'est ce qui empêche le bouton
-                de télécharger de s'afficher, et donc de contourner le compteur */}
+            {slots.GoToNextPage}
+            {slots.GoToPreviousPage}
+            {slots.Rotate}
+            {/* slots.FullScreen et slots.NumPages n'existent pas dans cette version */}
+            {/* On ne rend pas slots.download — empêche le contournement du compteur */}
           </>
         )}
       </Toolbar>
