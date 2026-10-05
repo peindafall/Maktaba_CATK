@@ -6,7 +6,7 @@ import { Mail, Lock, User } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 import { Input } from '../components/common/Input';
 import { Button } from '../components/common/Button';
-import Logo from '../assets/logo.svg';
+import Logo from '../assets/logo.png';
 import { validateEmail, validatePassword, validatePasswordMatch } from '../utils/validators';
 
 const RegisterPage = () => {
@@ -41,8 +41,31 @@ const RegisterPage = () => {
     try {
       await registerMutation.mutateAsync(form);
       navigate('/');
-    } catch {
-      setApiError('Une erreur s\'est produite. Veuillez réessayer.');
+    } catch (err: any) {
+      // Afficher le message d'erreur exact renvoyé par le backend
+      const backendData = err?.response?.data;
+      let message = 'Une erreur s\'est produite. Veuillez réessayer.';
+      if (backendData) {
+        if (typeof backendData === 'string') {
+          message = backendData;
+        } else if (backendData.detail) {
+          message = backendData.detail;
+        } else if (backendData.email) {
+          message = `Email : ${Array.isArray(backendData.email) ? backendData.email.join(', ') : backendData.email}`;
+        } else if (backendData.username) {
+          message = `Nom d'utilisateur : ${Array.isArray(backendData.username) ? backendData.username.join(', ') : backendData.username}`;
+        } else if (backendData.password) {
+          message = `Mot de passe : ${Array.isArray(backendData.password) ? backendData.password.join(', ') : backendData.password}`;
+        } else {
+          // Premier champ d'erreur
+          const firstKey = Object.keys(backendData)[0];
+          if (firstKey) {
+            const val = backendData[firstKey];
+            message = `${firstKey} : ${Array.isArray(val) ? val.join(', ') : val}`;
+          }
+        }
+      }
+      setApiError(message);
     }
   };
 
@@ -57,7 +80,7 @@ const RegisterPage = () => {
       >
         <div className="text-center mb-8">
           <Link to="/">
-            <img src={Logo} alt="Maktaba CATK" className="h-16 mx-auto mb-4" />
+            <img src={Logo} alt="Maktaba CATK" className="h-28 w-auto mx-auto mb-2" />
           </Link>
           <h1 className="text-2xl font-bold text-[var(--text-primary)]">{t('auth.register_title')}</h1>
         </div>

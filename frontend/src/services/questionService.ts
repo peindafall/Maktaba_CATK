@@ -13,4 +13,7 @@ export const questionService = {
 
   getByCategory: (categorySlug: string, params?: Record<string, unknown>) =>
     api.get<PaginatedResponse<Question>>(`/questions/?category__slug=${categorySlug}`, { params }).then((r) => r.data),
+
+  incrementView: (id: string) =>
+    api.post<{ views_count: number }>(`/questions/${id}/view/`).then((r) => r.data),
 };

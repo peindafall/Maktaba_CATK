@@ -1,5 +1,8 @@
-from rest_framework import viewsets
+from rest_framework import viewsets, status
+from rest_framework.decorators import action
 from rest_framework.permissions import AllowAny
+from rest_framework.response import Response
+from django.db.models import F
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.filters import SearchFilter, OrderingFilter
 
@@ -32,3 +35,11 @@ class QuestionViewSet(viewsets.ModelViewSet):
         if self.action in ('create', 'update', 'partial_update', 'destroy'):
             return [IsAdminUser()]
         return [AllowAny()]
+
+    @action(detail=True, methods=['post'], permission_classes=[AllowAny])
+    def view(self, request, pk=None):
+        """Incrémente le compteur de vues."""
+        question = self.get_object()
+        Question.objects.filter(pk=question.pk).update(views_count=F('views_count') + 1)
+        question.refresh_from_db(fields=['views_count'])
+        return Response({'views_count': question.views_count}, status=status.HTTP_200_OK)

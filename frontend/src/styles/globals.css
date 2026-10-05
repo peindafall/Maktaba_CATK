@@ -4,58 +4,68 @@
 @tailwind components;
 @tailwind utilities;
 
-@layer base {
-  :root {
-    --primary-green: #1EA478;
-    --primary-green-light: #1FA645;
-    --primary-green-dark: #114D0D;
-    --gold-primary: #BF8B28;
-    --gold-light: #FEFBA4;
-    --gold-soft: #FDEF72;
-    --gold-dark: #A67723;
-    --background: #F8F9FA;
-    --surface: #FFFFFF;
-    --text-primary: #1A1A1A;
-    --text-secondary: #666666;
-    --border-light: #EAEAEA;
-  }
+/* ============================================================
+   Variables de thème — hors @layer pour garantir la priorité
+   ============================================================ */
+:root {
+  --primary-green: #1EA478;
+  --primary-green-light: #1FA645;
+  --primary-green-dark: #114D0D;
+  --gold-primary: #BF8B28;
+  --gold-light: #FEFBA4;
+  --gold-soft: #FDEF72;
+  --gold-dark: #A67723;
 
-  .dark {
-    --background: #121212;
-    --surface: #1E1E1E;
-    --text-primary: #F5F5F5;
-    --text-secondary: #AAAAAA;
-    --border-light: #2A2A2A;
-  }
-
-  body {
-    @apply bg-[var(--background)] text-[var(--text-primary)] transition-colors duration-200;
-    font-family: 'Inter', system-ui, sans-serif;
-  }
-
-  [lang="ar"],
-  [dir="rtl"] {
-    font-family: 'Amiri', serif;
-  }
-
-  html {
-    scroll-behavior: smooth;
-  }
-
-  ::-webkit-scrollbar {
-    width: 6px;
-  }
-
-  ::-webkit-scrollbar-track {
-    background: var(--background);
-  }
-
-  ::-webkit-scrollbar-thumb {
-    background: var(--primary-green);
-    border-radius: 3px;
-  }
+  --background: #F8F9FA;
+  --surface: #FFFFFF;
+  --text-primary: #1A1A1A;
+  --text-secondary: #666666;
+  --border-light: #EAEAEA;
 }
 
+html.dark {
+  --background: #121212;
+  --surface: #1E1E1E;
+  --text-primary: #F5F5F5;
+  --text-secondary: #AAAAAA;
+  --border-light: #2A2A2A;
+}
+
+/* ✅ Styles de base en CSS pur, PAS en @apply, pour garantir l'application */
+html,
+body {
+  background-color: var(--background);
+  color: var(--text-primary);
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+body {
+  font-family: 'Inter', system-ui, sans-serif;
+}
+
+[lang='ar'],
+[dir='rtl'] {
+  font-family: 'Amiri', serif;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+::-webkit-scrollbar {
+  width: 6px;
+}
+::-webkit-scrollbar-track {
+  background: var(--background);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--primary-green);
+  border-radius: 3px;
+}
+
+/* ============================================================
+   Composants
+   ============================================================ */
 @layer components {
   .btn-primary {
     @apply bg-primary text-white px-6 py-3 rounded-2xl font-semibold
@@ -76,8 +86,9 @@
   }
 
   .card {
-    @apply bg-[var(--surface)] rounded-3xl shadow-sm border border-[var(--border-light)]
-           hover:shadow-md transition-all duration-200;
+    @apply rounded-3xl shadow-sm hover:shadow-md transition-all duration-200;
+    background-color: var(--surface);
+    border: 1px solid var(--border-light);
   }
 
   .gradient-primary {
@@ -99,13 +110,18 @@
   }
 
   .section-title {
-    @apply text-2xl font-bold text-[var(--text-primary)] mb-6;
+    @apply text-2xl font-bold mb-6;
+    color: var(--text-primary);
   }
 
   .input-base {
-    @apply w-full px-4 py-3 rounded-2xl border border-[var(--border-light)]
-           bg-[var(--surface)] text-[var(--text-primary)]
-           focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary
-           transition-all duration-200 placeholder:text-[var(--text-secondary)];
+    @apply w-full px-4 py-3 rounded-2xl transition-all duration-200
+           focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary;
+    background-color: var(--surface);
+    color: var(--text-primary);
+    border: 1px solid var(--border-light);
+  }
+  .input-base::placeholder {
+    color: var(--text-secondary);
   }
 }

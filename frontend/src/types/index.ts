@@ -28,7 +28,8 @@ export interface Teaching {
   description_ar: string;
   category: Category;
   cover_image_url: string;
-  pdf_file: string;
+  pdf_file?: string;
+  pdf_file_url?: string; 
   language: 'fr' | 'en' | 'ar';
   views_count: number;
   downloads_count: number;
@@ -41,13 +42,17 @@ export interface Audio {
   title_fr: string;
   title_en: string;
   title_ar: string;
-  category: Category;
+  category?: any;
   language: string;
-  audio_file: string;
+  audio_url: string;        // OBLIGATOIRE
   cover_image_url: string;
   duration: string | null;
+  duration_seconds?: number;
   plays_count: number;
+  downloads_count: number;  // OBLIGATOIRE
   is_published: boolean;
+  created_at: string;
+  updated_at: string;
 }
 
 export interface Video {

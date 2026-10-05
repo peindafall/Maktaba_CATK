@@ -1,12 +1,25 @@
 <!doctype html>
-<html lang="fr">
+<html lang="fr" class="dark">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/x-icon" href="/favicon.ico" />
+    <link rel="icon" type="image/png" href="/logo.png" />
+    <link rel="apple-touch-icon" href="/logo.png" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="description" content="Maktaba CATK - Bibliothèque Numérique des Enseignements du Professeur Cheikh Ahmet Tidiane KEBE" />
     <meta name="theme-color" content="#1EA478" />
     <title>Maktaba CATK</title>
+    <!-- Fond sombre dès le chargement initial pour éviter tout flash blanc -->
+    <style>
+      html, body {
+        background-color: #121212;
+        color: #F5F5F5;
+        margin: 0;
+      }
+      html:not(.dark), html:not(.dark) body {
+        background-color: #F8F9FA;
+        color: #1A1A1A;
+      }
+    </style>
   </head>
   <body>
     <div id="root"></div>

@@ -1,4 +1,5 @@
 from .base import *
+import os
 
 DEBUG = True
 
@@ -12,8 +13,6 @@ INSTALLED_APPS += [
 MIDDLEWARE = ['debug_toolbar.middleware.DebugToolbarMiddleware'] + MIDDLEWARE
 
 INTERNAL_IPS = ['127.0.0.1']
-
-# Use MinIO/S3 storage in development as well (configured via STORAGES in base.py)
 
 # Use console email backend in development
 EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
@@ -29,5 +28,21 @@ LOGGING = {
     'root': {
         'handlers': ['console'],
         'level': 'DEBUG',
+    },
+}
+
+# ============================================================
+# MEDIA FILES - STOCKAGE LOCAL (pas de MinIO en développement)
+# ============================================================
+MEDIA_URL = '/media/'
+MEDIA_ROOT = BASE_DIR / 'media'
+
+# ⚠️ IMPORTANT : Override STORAGES pour utiliser le stockage local
+STORAGES = {
+    "default": {
+        "BACKEND": "django.core.files.storage.FileSystemStorage",
+    },
+    "staticfiles": {
+        "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
     },
 }

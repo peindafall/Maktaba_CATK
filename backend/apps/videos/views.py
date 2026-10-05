@@ -1,4 +1,4 @@
-from rest_framework import viewsets
+from rest_framework import viewsets, status
 from rest_framework.decorators import action
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
@@ -38,11 +38,16 @@ class VideoViewSet(viewsets.ModelViewSet):
             return [IsAdminUser()]
         return [AllowAny()]
 
-    @action(detail=True, methods=['post'])
+    @action(detail=True, methods=['post'], permission_classes=[AllowAny])
     def view(self, request, pk=None):
+        """Incrémente le compteur de vues (appelé quand l'utilisateur clique sur Play)."""
         video = self.get_object()
         video_service.increment_views(video.id)
-        return Response({'views_count': video.views_count + 1})
+        video.refresh_from_db(fields=['views_count'])
+        return Response(
+            {'views_count': video.views_count},
+            status=status.HTTP_200_OK
+        )
 
     @action(detail=False, methods=['get'])
     def by_category(self, request):

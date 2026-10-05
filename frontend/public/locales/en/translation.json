@@ -38,14 +38,16 @@
     "all_categories": "All categories"
   },
   "audio": {
-    "title": "Audio",
-    "play": "Play",
-    "pause": "Pause",
-    "duration": "Duration",
-    "plays": "plays",
-    "no_audios": "No audio found",
-    "now_playing": "Now Playing"
-  },
+  "title": "Audio",
+  "play": "Play",
+  "pause": "Pause",
+  "duration": "Duration",
+  "plays": "plays",
+  "no_audios": "No audio found",
+  "now_playing": "Now Playing",
+  "download": "Download",
+  "downloads": "downloads"
+},
   "videos": {
     "title": "YouTube Videos",
     "watch": "Watch",

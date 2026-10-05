@@ -6,10 +6,16 @@ ENV PIP_NO_CACHE_DIR=1
 
 WORKDIR /app
 
-RUN apt-get update && apt-get install -y \
+# FIX : Configuration des dépôts Debian
+RUN echo "deb http://deb.debian.org/debian/ bookworm main contrib non-free" > /etc/apt/sources.list && \
+    echo "deb http://deb.debian.org/debian/ bookworm-updates main contrib non-free" >> /etc/apt/sources.list && \
+    echo "deb http://security.debian.org/debian-security bookworm-security main contrib non-free" >> /etc/apt/sources.list
+
+# Installation des dépendances système (SANS libmagic1)
+RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
     libpq-dev \
-    libmagic1 \
+    && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
 # Development stage
@@ -18,6 +24,7 @@ COPY requirements/ requirements/
 RUN pip install -r requirements/development.txt
 COPY . .
 EXPOSE 8000
+CMD ["python", "manage.py", "runserver", "0.0.0.0:8000"]
 
 # Production stage
 FROM base AS production

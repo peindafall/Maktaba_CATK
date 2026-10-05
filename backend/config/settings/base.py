@@ -31,7 +31,7 @@ INSTALLED_APPS = [
     'corsheaders',
     'django_filters',
     'drf_spectacular',
-    'storages',
+    # 'storages',  # Désactivé : on utilise le stockage local
     # Apps
     'apps.users',
     'apps.teachings',
@@ -104,15 +104,18 @@ USE_TZ = True
 
 STATIC_URL = '/static/'
 STATIC_ROOT = BASE_DIR / 'staticfiles'
+
+# STORAGES - Utilisation du stockage local (remplace MinIO)
 STORAGES = {
     'default': {
-        'BACKEND': 'storages.backends.s3boto3.S3Boto3Storage',
+        'BACKEND': 'django.core.files.storage.FileSystemStorage',
     },
     'staticfiles': {
         'BACKEND': 'whitenoise.storage.CompressedManifestStaticFilesStorage',
     },
 }
 
+# Media files (local storage)
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
 
@@ -161,13 +164,17 @@ CELERY_TASK_SERIALIZER = 'json'
 CELERY_RESULT_SERIALIZER = 'json'
 CELERY_TIMEZONE = TIME_ZONE
 
-AWS_ACCESS_KEY_ID = env('MINIO_ACCESS_KEY', default='')
-AWS_SECRET_ACCESS_KEY = env('MINIO_SECRET_KEY', default='')
-AWS_STORAGE_BUCKET_NAME = env('MINIO_BUCKET_NAME', default='maktabacatk')
-AWS_S3_ENDPOINT_URL = env('MINIO_ENDPOINT', default='http://localhost:9000')
-AWS_S3_FILE_OVERWRITE = False
-AWS_DEFAULT_ACL = 'public-read'
-AWS_QUERYSTRING_AUTH = False
+# ============================================================
+# MINIO / S3 STORAGE - DÉSACTIVÉ
+# Nous utilisons désormais le stockage local (FileSystemStorage)
+# ============================================================
+# AWS_ACCESS_KEY_ID = env('MINIO_ACCESS_KEY', default='')
+# AWS_SECRET_ACCESS_KEY = env('MINIO_SECRET_KEY', default='')
+# AWS_STORAGE_BUCKET_NAME = env('MINIO_BUCKET_NAME', default='maktabacatk')
+# AWS_S3_ENDPOINT_URL = env('MINIO_ENDPOINT', default='http://localhost:9000')
+# AWS_S3_FILE_OVERWRITE = False
+# AWS_DEFAULT_ACL = 'public-read'
+# AWS_QUERYSTRING_AUTH = False
 
 CACHES = {
     'default': {
@@ -185,5 +192,6 @@ EMAIL_USE_TLS = True
 EMAIL_HOST_USER = env('EMAIL_HOST_USER', default='')
 EMAIL_HOST_PASSWORD = env('EMAIL_HOST_PASSWORD', default='')
 DEFAULT_FROM_EMAIL = env('DEFAULT_FROM_EMAIL', default='noreply@catk.org')
+FRONTEND_URL = env('FRONTEND_URL', default='http://localhost:3000')
 
 LOCALE_PATHS = [BASE_DIR / 'locale']

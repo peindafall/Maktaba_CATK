@@ -14,6 +14,18 @@ export const teachingService = {
   getByCategory: (categorySlug: string, params?: Record<string, unknown>) =>
     api.get<PaginatedResponse<Teaching>>(`/teachings/?category__slug=${categorySlug}`, { params }).then((r) => r.data),
 
-  incrementDownload: (id: string) =>
-    api.post(`/teachings/${id}/download/`).then((r) => r.data),
+  // Téléchargement : on renvoie simplement l'URL de l'action download (GET)
+  getDownloadUrl: (id: string) => `${api.defaults.baseURL}/teachings/${id}/download/`,
+
+  // Lecture en ligne : URL de l'action read (GET)
+  getReadUrl: (id: string) => `${api.defaults.baseURL}/teachings/${id}/read/`,
+
+  // Incrémenter les vues (POST)
+  incrementView: (id: string) => api.post(`/teachings/${id}/view/`),
+
+  // Favoris
+  toggleFavorite: (id: string): Promise<{ is_favorited: boolean }> =>
+    api.post(`/teachings/${id}/favorite/`).then((r) => r.data),
+
+  getFavorites: () => api.get<Teaching[]>('/teachings/my_favorites/').then((r) => r.data),
 };

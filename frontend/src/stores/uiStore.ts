@@ -15,31 +15,18 @@ interface UIState {
 export const useUIStore = create<UIState>()(
   persist(
     (set) => ({
-      isDarkMode: false,
+      isDarkMode: true,        // mode sombre par défaut
       isSidebarOpen: false,
       isMobileMenuOpen: false,
-      toggleDarkMode: () =>
-        set((state) => {
-          const next = !state.isDarkMode;
-          if (next) {
-            document.documentElement.classList.add('dark');
-          } else {
-            document.documentElement.classList.remove('dark');
-          }
-          return { isDarkMode: next };
-        }),
-      setDarkMode: (value) => {
-        if (value) {
-          document.documentElement.classList.add('dark');
-        } else {
-          document.documentElement.classList.remove('dark');
-        }
-        set({ isDarkMode: value });
-      },
+      toggleDarkMode: () => set((state) => ({ isDarkMode: !state.isDarkMode })),
+      setDarkMode: (value: boolean) => set({ isDarkMode: value }),
       toggleSidebar: () => set((state) => ({ isSidebarOpen: !state.isSidebarOpen })),
       toggleMobileMenu: () => set((state) => ({ isMobileMenuOpen: !state.isMobileMenuOpen })),
       closeMobileMenu: () => set({ isMobileMenuOpen: false }),
     }),
-    { name: 'catk-ui-storage', partialize: (state) => ({ isDarkMode: state.isDarkMode }) }
+    {
+      name: 'catk-ui-storage',
+      partialize: (state) => ({ isDarkMode: state.isDarkMode }),
+    }
   )
 );

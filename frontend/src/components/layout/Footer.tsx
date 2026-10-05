@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { BookOpen, Headphones, Video, HelpCircle, Mail, Globe } from 'lucide-react';
-import Logo from '../../assets/logo.svg';
+import Logo from '../../assets/logo.png';
 
 export const Footer = () => {
   const { t } = useTranslation();
@@ -12,7 +12,7 @@ export const Footer = () => {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
           {/* Brand */}
           <div className="md:col-span-2">
-            <img src={Logo} alt="Maktaba CATK" className="h-12 mb-4" />
+            <img src={Logo} alt="Maktaba CATK" className="h-14 w-auto object-contain" />
             <p className="text-[var(--text-secondary)] text-sm leading-relaxed max-w-xs">
               Bibliothèque numérique des enseignements du Professeur Cheikh Ahmet Tidiane KEBE.
               Accédez à des milliers d'enseignements islamiques authentiques.

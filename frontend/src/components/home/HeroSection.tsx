@@ -115,9 +115,13 @@ export const HeroSection = () => {
               style={{ background: 'rgba(255,255,255,0.12)', backdropFilter: 'blur(20px)', border: '1px solid rgba(255,255,255,0.2)' }}
             >
               {/* Avatar placeholder */}
-              <div className="w-32 h-32 rounded-full mx-auto mb-4 flex items-center justify-center text-6xl"
-                style={{ background: 'linear-gradient(135deg, #BF8B28, #A67723)' }}>
-                🎓
+              <div className="w-32 h-32 rounded-full mx-auto mb-4 overflow-hidden"
+                  style={{ background: 'linear-gradient(135deg, #BF8B28, #A67723)' }}>
+                <img 
+                  src="/logo.png" 
+                  alt="Description de l'image"
+                  className="w-full h-full object-cover"
+                />
               </div>
               <h3 className="text-white text-xl font-bold mb-1">
                 Prof. Cheikh Ahmet Tidiane KEBE

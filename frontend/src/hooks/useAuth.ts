@@ -5,22 +5,34 @@ import { useAuthStore } from '../stores/authStore';
 export const useAuth = () => {
   const { user, isAuthenticated, login, logout } = useAuthStore();
 
+  // Helper : après avoir stocké les tokens, si user absent, on va le chercher
+  const finalizeLogin = async (data: { access: string; refresh: string; user?: any }) => {
+    if (!data?.access || !data?.refresh) {
+      throw new Error('Réponse d\'authentification invalide');
+    }
+    localStorage.setItem('access_token', data.access);
+    localStorage.setItem('refresh_token', data.refresh);
+
+    let finalUser = data.user;
+    if (!finalUser) {
+      // Le backend n'a pas renvoyé l'utilisateur → on va le chercher
+      try {
+        finalUser = await authService.getProfile();
+      } catch (e) {
+        console.error('Impossible de récupérer le profil après connexion', e);
+      }
+    }
+    login(finalUser, data.access, data.refresh);
+  };
+
   const loginMutation = useMutation({
     mutationFn: authService.login,
-    onSuccess: (data) => {
-      login(data.user, data.access, data.refresh);
-      localStorage.setItem('access_token', data.access);
-      localStorage.setItem('refresh_token', data.refresh);
-    },
+    onSuccess: finalizeLogin,
   });
 
   const registerMutation = useMutation({
     mutationFn: authService.register,
-    onSuccess: (data) => {
-      login(data.user, data.access, data.refresh);
-      localStorage.setItem('access_token', data.access);
-      localStorage.setItem('refresh_token', data.refresh);
-    },
+    onSuccess: finalizeLogin,
   });
 
   const handleLogout = async () => {
@@ -29,7 +41,7 @@ export const useAuth = () => {
       try {
         await authService.logout(refreshToken);
       } catch {
-        // ignore errors on logout
+        // ignore
       }
     }
     localStorage.removeItem('access_token');

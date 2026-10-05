@@ -46,8 +46,12 @@ class Video(models.Model):
         return self.title_fr
 
     def save(self, *args, **kwargs):
-        if self.youtube_url and not self.youtube_id:
-            self.youtube_id = self._extract_youtube_id(self.youtube_url)
+        # Toujours ré-extraire l'ID si l'URL est présente (au cas où elle a changé)
+        if self.youtube_url:
+            extracted = self._extract_youtube_id(self.youtube_url)
+            if extracted:
+                self.youtube_id = extracted
+        # Générer le thumbnail si on a un ID et pas encore de thumbnail
         if self.youtube_id and not self.thumbnail_url:
             self.thumbnail_url = f'https://img.youtube.com/vi/{self.youtube_id}/maxresdefault.jpg'
         super().save(*args, **kwargs)
@@ -55,7 +59,7 @@ class Video(models.Model):
     @staticmethod
     def _extract_youtube_id(url: str) -> str:
         patterns = [
-            r'(?:youtube\.com/watch\?v=|youtu\.be/|youtube\.com/embed/)([a-zA-Z0-9_-]{11})',
+            r'(?:youtube\.com/watch\?v=|youtu\.be/|youtube\.com/embed/|youtube\.com/live/|youtube\.com/shorts/|youtube\.com/v/)([a-zA-Z0-9_-]{11})',
         ]
         for pattern in patterns:
             match = re.search(pattern, url)

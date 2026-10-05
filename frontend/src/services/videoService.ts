@@ -13,4 +13,8 @@ export const videoService = {
 
   getByCategory: (categorySlug: string, params?: Record<string, unknown>) =>
     api.get<PaginatedResponse<Video>>(`/videos/?category__slug=${categorySlug}`, { params }).then((r) => r.data),
+
+  // ✅ NOUVEAU : incrémente le compteur de vues
+  incrementView: (id: string) =>
+    api.post<{ views_count: number }>(`/videos/${id}/view/`).then((r) => r.data),
 };

@@ -2,14 +2,13 @@ import { useParams } from 'react-router-dom';
 import { useAudio } from '../hooks/useAudios';
 import { PageLoader } from '../components/common/Spinner';
 import { EmptyState } from '../components/common/EmptyState';
-import { Headphones } from 'lucide-react';
+import { Headphones, Play, Pause, Download } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
 import { useLanguage } from '../hooks/useLanguage';
 import { getLocalizedField } from '../utils/formatters';
 import { usePlayerStore } from '../stores/playerStore';
-import { Play, Pause } from 'lucide-react';
-import { AudioCard } from '../components/audio/AudioCard';
+import { AudioDownloadButton } from '../components/audio/AudioDownloadButton';
 
 const AudioDetailPage = () => {
   const { id } = useParams<{ id: string }>();
@@ -55,6 +54,7 @@ const AudioDetailPage = () => {
           </p>
         )}
 
+        {/* Bouton Play/Pause */}
         <button
           onClick={() => {
             if (currentAudio?.id === audio.id) {
@@ -73,8 +73,23 @@ const AudioDetailPage = () => {
         </button>
 
         <p className="mt-4 text-sm text-[var(--text-secondary)]">
-          {isCurrentlyPlaying ? t('audio.now_playing') : t('audio.play')}
+          {isCurrentlyPlaying ? t('audio.now_playing', 'En cours de lecture') : t('audio.play', 'Écouter')}
         </p>
+
+        {/* ✅ BOUTON TÉLÉCHARGER */}
+        <div className="mt-6 flex justify-center">
+          <AudioDownloadButton audio={audio} variant="outline" />
+        </div>
+
+        {/* Statistiques */}
+        <div className="mt-6 flex items-center justify-center gap-6 text-sm text-[var(--text-secondary)]">
+          <span className="flex items-center gap-1">
+            <Headphones size={14} /> {audio.plays_count} {t('audio.plays', 'écoutes')}
+          </span>
+          <span className="flex items-center gap-1">
+            <Download size={14} /> {audio.downloads_count} {t('audio.downloads', 'téléchargements')}
+          </span>
+        </div>
       </motion.div>
     </div>
   );

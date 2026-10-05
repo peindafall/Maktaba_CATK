@@ -16,4 +16,9 @@ export const audioService = {
 
   incrementPlay: (id: string) =>
     api.post(`/audios/${id}/play/`).then((r) => r.data),
+
+  incrementDownload: (id: string) =>
+    api.post<{ audio_url: string; downloads_count: number; filename: string | null }>(
+      `/audios/${id}/download/`
+    ).then((r) => r.data),
 };

@@ -6,7 +6,7 @@ import { Mail, Lock, Eye, EyeOff } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 import { Input } from '../components/common/Input';
 import { Button } from '../components/common/Button';
-import Logo from '../assets/logo.svg';
+import Logo from '../assets/logo.png';
 
 const LoginPage = () => {
   const { t } = useTranslation();
@@ -38,7 +38,7 @@ const LoginPage = () => {
         {/* Logo */}
         <div className="text-center mb-8">
           <Link to="/">
-            <img src={Logo} alt="Maktaba CATK" className="h-16 mx-auto mb-4" />
+            <img src={Logo} alt="Maktaba CATK" className="h-28 w-auto mx-auto mb-2" />
           </Link>
           <h1 className="text-2xl font-bold text-[var(--text-primary)]">{t('auth.login_title')}</h1>
           <p className="text-[var(--text-secondary)] mt-1">Maktaba CATK</p>

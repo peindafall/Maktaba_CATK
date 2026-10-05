@@ -4,7 +4,9 @@ import { useTranslation } from 'react-i18next';
 import { X, Play, Pause, SkipBack, SkipForward, Volume2, Headphones } from 'lucide-react';
 import { usePlayerStore } from '../../stores/playerStore';
 import { useLanguage } from '../../hooks/useLanguage';
+import { useIncrementAudioPlay } from '../../hooks/useAudios';
 import { getLocalizedField, formatDuration } from '../../utils/formatters';
+import { AudioDownloadButton } from './AudioDownloadButton';
 
 export const AudioPlayer = () => {
   const { t } = useTranslation();
@@ -23,22 +25,33 @@ export const AudioPlayer = () => {
   } = usePlayerStore();
 
   const audioRef = useRef<HTMLAudioElement>(null);
+  const hasTracked = useRef<string | null>(null);
+  const incrementPlay = useIncrementAudioPlay();
 
+  // Charger l'audio quand il change
   useEffect(() => {
     if (!audioRef.current || !currentAudio) return;
-    audioRef.current.src = currentAudio.audio_file;
+    audioRef.current.src = currentAudio.audio_url;
     audioRef.current.load();
     if (isPlaying) audioRef.current.play().catch(() => {});
   }, [currentAudio]);
 
+  // Play/Pause
   useEffect(() => {
-    if (!audioRef.current) return;
+    if (!audioRef.current || !currentAudio) return;
+
     if (isPlaying) {
       audioRef.current.play().catch(() => {});
+
+      // ✅ Incrémenter le compteur au premier Play de cet audio
+      if (hasTracked.current !== currentAudio.id) {
+        hasTracked.current = currentAudio.id;
+        incrementPlay.mutate(currentAudio.id);
+      }
     } else {
       audioRef.current.pause();
     }
-  }, [isPlaying]);
+  }, [isPlaying, currentAudio]);
 
   useEffect(() => {
     if (audioRef.current) audioRef.current.volume = volume;
@@ -96,7 +109,7 @@ export const AudioPlayer = () => {
           <div className="flex-1 min-w-0">
             <p className="text-sm font-semibold text-[var(--text-primary)] truncate">{title}</p>
             <p className="text-xs text-[var(--text-secondary)]">
-              {formatDuration(String(Math.floor(currentTime / 60)).padStart(2,'0') + ':' + String(Math.floor(currentTime % 60)).padStart(2,'0'))} 
+              {formatDuration(String(Math.floor(currentTime / 60)).padStart(2,'0') + ':' + String(Math.floor(currentTime % 60)).padStart(2,'0'))}
               {' / '}
               {formatDuration(String(Math.floor(duration / 60)).padStart(2,'0') + ':' + String(Math.floor(duration % 60)).padStart(2,'0'))}
             </p>
@@ -116,6 +129,8 @@ export const AudioPlayer = () => {
             <button className="p-2 rounded-xl hover:bg-[var(--border-light)] transition-colors hidden sm:block">
               <SkipForward size={18} />
             </button>
+             {/* BOUTON TÉLÉCHARGER */}
+            <AudioDownloadButton audio={currentAudio} variant="icon" />
           </div>
 
           {/* Volume */}

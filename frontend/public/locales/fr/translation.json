@@ -38,14 +38,16 @@
     "all_categories": "Toutes les catégories"
   },
   "audio": {
-    "title": "Audios",
-    "play": "Écouter",
-    "pause": "Pause",
-    "duration": "Durée",
-    "plays": "écoutes",
-    "no_audios": "Aucun audio trouvé",
-    "now_playing": "Lecture en cours"
-  },
+  "title": "Audios",
+  "play": "Écouter",
+  "pause": "Pause",
+  "duration": "Durée",
+  "plays": "écoutes",
+  "no_audios": "Aucun audio trouvé",
+  "now_playing": "Lecture en cours",
+  "download": "Télécharger",
+  "downloads": "téléchargements"
+},
   "videos": {
     "title": "Émissions YouTube",
     "watch": "Regarder",

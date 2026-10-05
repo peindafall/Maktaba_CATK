@@ -19,6 +19,7 @@ const QuestionsPage = lazy(() => import('./pages/QuestionsPage'));
 const QuestionDetailPage = lazy(() => import('./pages/QuestionDetailPage'));
 const SearchPage = lazy(() => import('./pages/SearchPage'));
 const ProfilePage = lazy(() => import('./pages/ProfilePage'));
+const FavoritesPage = lazy(() => import('./pages/FavoritesPage'));
 const LoginPage = lazy(() => import('./pages/LoginPage'));
 const RegisterPage = lazy(() => import('./pages/RegisterPage'));
 const NotFoundPage = lazy(() => import('./pages/NotFoundPage'));
@@ -27,20 +28,23 @@ const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
       retry: 1,
-      staleTime: 5 * 60 * 1000, // 5 minutes
+      staleTime: 5 * 60 * 1000,
       refetchOnWindowFocus: false,
     },
   },
 });
 
 const AppContent = () => {
-  const { isDarkMode } = useUIStore();
+  // On sélectionne uniquement isDarkMode pour éviter les re-renders inutiles
+  const isDarkMode = useUIStore((s) => s.isDarkMode);
 
+  // Source unique de vérité : on applique/retire la classe "dark" sur <html>
   useEffect(() => {
+    const root = document.documentElement;
     if (isDarkMode) {
-      document.documentElement.classList.add('dark');
+      root.classList.add('dark');
     } else {
-      document.documentElement.classList.remove('dark');
+      root.classList.remove('dark');
     }
   }, [isDarkMode]);
 
@@ -48,11 +52,9 @@ const AppContent = () => {
     <BrowserRouter>
       <Suspense fallback={<PageLoader />}>
         <Routes>
-          {/* Auth pages without layout */}
           <Route path="/connexion" element={<LoginPage />} />
           <Route path="/inscription" element={<RegisterPage />} />
 
-          {/* Main layout routes */}
           <Route
             path="/*"
             element={
@@ -70,6 +72,7 @@ const AppContent = () => {
                     <Route path="/questions/:id" element={<QuestionDetailPage />} />
                     <Route path="/recherche" element={<SearchPage />} />
                     <Route path="/profil" element={<ProfilePage />} />
+                    <Route path="/favoris" element={<FavoritesPage />} />
                     <Route path="*" element={<NotFoundPage />} />
                   </Routes>
                 </Suspense>
@@ -79,7 +82,6 @@ const AppContent = () => {
         </Routes>
       </Suspense>
 
-      {/* Global audio player */}
       <AudioPlayer />
     </BrowserRouter>
   );

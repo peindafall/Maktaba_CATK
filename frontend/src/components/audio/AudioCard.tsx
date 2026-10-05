@@ -1,6 +1,6 @@
 import { motion } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
-import { Play, Clock, Headphones } from 'lucide-react';
+import { Play, Pause, Clock, Headphones, Download } from 'lucide-react';
 import type { Audio } from '../../types';
 import { useLanguage } from '../../hooks/useLanguage';
 import { getLocalizedField, formatNumber, formatDuration } from '../../utils/formatters';
@@ -13,13 +13,18 @@ interface AudioCardProps {
 export const AudioCard = ({ audio }: AudioCardProps) => {
   const { t } = useTranslation();
   const { currentLanguage } = useLanguage();
-  const { setCurrentAudio, currentAudio, isPlaying } = usePlayerStore();
+  const { setCurrentAudio, togglePlay, currentAudio, isPlaying } = usePlayerStore();
 
   const title = getLocalizedField(audio as unknown as Record<string, unknown>, 'title', currentLanguage);
+  const description = getLocalizedField(audio as unknown as Record<string, unknown>, 'description', currentLanguage);
   const isCurrentlyPlaying = currentAudio?.id === audio.id && isPlaying;
 
   const handlePlay = () => {
-    setCurrentAudio(audio);
+    if (currentAudio?.id === audio.id) {
+      togglePlay();
+    } else {
+      setCurrentAudio(audio);
+    }
   };
 
   return (
@@ -48,7 +53,11 @@ export const AudioCard = ({ audio }: AudioCardProps) => {
             onClick={handlePlay}
             className="w-12 h-12 rounded-full bg-white flex items-center justify-center shadow-xl hover:scale-110 transition-transform"
           >
-            <Play size={20} className="text-primary ml-0.5" fill="currentColor" />
+            {isCurrentlyPlaying ? (
+              <Pause size={20} className="text-primary" />
+            ) : (
+              <Play size={20} className="text-primary ml-0.5" fill="currentColor" />
+            )}
           </button>
         </div>
       </div>
@@ -68,20 +77,33 @@ export const AudioCard = ({ audio }: AudioCardProps) => {
           </span>
         )}
 
-        <h3 className="font-semibold text-[var(--text-primary)] text-sm leading-snug line-clamp-2 mb-2">
+        {/* Titre */}
+        <h3 className="font-semibold text-[var(--text-primary)] text-sm leading-snug line-clamp-2 mb-1">
           {title}
         </h3>
 
-        {/* Meta */}
+        {/* Description courte (2 lignes max) */}
+        {description && (
+          <p className="text-xs text-[var(--text-secondary)] line-clamp-2 mb-2">
+            {description}
+          </p>
+        )}
+
+        {/* Meta : durée + écoutes + téléchargements */}
         <div className="flex items-center justify-between text-xs text-[var(--text-secondary)] mb-3">
           {audio.duration && (
             <span className="flex items-center gap-1">
               <Clock size={11} /> {formatDuration(audio.duration)}
             </span>
           )}
-          <span className="flex items-center gap-1">
-            <Headphones size={11} /> {formatNumber(audio.plays_count)} {t('audio.plays')}
-          </span>
+          <div className="flex items-center gap-3">
+            <span className="flex items-center gap-1" title={t('audio.plays', 'écoutes')}>
+              <Headphones size={11} /> {formatNumber(audio.plays_count)}
+            </span>
+            <span className="flex items-center gap-1" title={t('audio.downloads', 'téléchargements')}>
+              <Download size={11} /> {formatNumber(audio.downloads_count)}
+            </span>
+          </div>
         </div>
 
         {/* Play button */}
@@ -93,8 +115,17 @@ export const AudioCard = ({ audio }: AudioCardProps) => {
               : 'bg-primary text-white hover:bg-primary-dark'
           }`}
         >
-          <Play size={14} fill="currentColor" />
-          {isCurrentlyPlaying ? t('audio.pause') : t('audio.play')}
+          {isCurrentlyPlaying ? (
+            <>
+              <Pause size={14} />
+              {t('audio.pause', 'Pause')}
+            </>
+          ) : (
+            <>
+              <Play size={14} fill="currentColor" />
+              {t('audio.play', 'Écouter')}
+            </>
+          )}
         </button>
       </div>
     </motion.div>

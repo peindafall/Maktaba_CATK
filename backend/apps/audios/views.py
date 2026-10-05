@@ -1,4 +1,4 @@
-from rest_framework import viewsets
+from rest_framework import viewsets, status
 from rest_framework.decorators import action
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
@@ -38,15 +38,26 @@ class AudioViewSet(viewsets.ModelViewSet):
             return [IsAdminUser()]
         return [AllowAny()]
 
-    @action(detail=True, methods=['post'])
+    @action(detail=True, methods=['post'], permission_classes=[AllowAny])
     def play(self, request, pk=None):
         audio = self.get_object()
         audio_service.increment_plays(audio.id)
-        return Response({'plays_count': audio.plays_count + 1})
+        audio.refresh_from_db(fields=['plays_count'])
+        return Response({'plays_count': audio.plays_count})
 
-    @action(detail=True, methods=['post'])
+    @action(detail=True, methods=['post'], permission_classes=[AllowAny])
     def download(self, request, pk=None):
+        """Incrémente le compteur de téléchargements et renvoie l'URL du fichier."""
         audio = self.get_object()
         audio_service.increment_downloads(audio.id)
-        serializer = AudioDetailSerializer(audio, context={'request': request})
-        return Response({'audio_url': serializer.data.get('audio_url')})
+        audio.refresh_from_db(fields=['downloads_count'])
+
+        audio_url = None
+        if audio.audio_file:
+            audio_url = request.build_absolute_uri(audio.audio_file.url)
+
+        return Response({
+            'audio_url': audio_url,
+            'downloads_count': audio.downloads_count,
+            'filename': audio.audio_file.name.split('/')[-1] if audio.audio_file else None,
+        })

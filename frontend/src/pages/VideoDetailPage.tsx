@@ -40,7 +40,11 @@ const VideoDetailPage = () => {
 
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
         {/* YouTube Player */}
-        <YouTubeEmbed videoId={video.youtube_id} className="mb-6" />
+        <YouTubeEmbed
+          videoId={video.youtube_id}
+          modelId={video.id}
+          className="mb-6"
+        />
 
         {/* Info */}
         <div className="card p-6">

@@ -30,13 +30,4 @@
   transform: scaleX(-1);
 }
 
-/* Dark mode media query fallback */
-@media (prefers-color-scheme: dark) {
-  :root:not(.light) {
-    --background: #121212;
-    --surface: #1E1E1E;
-    --text-primary: #F5F5F5;
-    --text-secondary: #AAAAAA;
-    --border-light: #2A2A2A;
-  }
-}
+
