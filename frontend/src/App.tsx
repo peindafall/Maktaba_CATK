@@ -1,88 +1,86 @@
-import { Suspense, lazy, useEffect } from 'react';
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { useEffect } from 'react';
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Layout } from './components/layout/Layout';
 import { AudioPlayer } from './components/audio/AudioPlayer';
-import { PageLoader } from './components/common/Spinner';
+import { ScrollToTop } from './components/layout/ScrollToTop';
+import { Toaster } from './components/common/Toaster';
+import { DownloadHelpModal } from './components/common/DownloadHelpModal';
 import { useUIStore } from './stores/uiStore';
+import { useAuthStore } from './stores/authStore';
+import { warmUpServer } from './services/api';
+import { Pages, prefetchAllPages } from './routes';
 import './i18n/config';
-
-// Lazy-loaded pages
-const HomePage = lazy(() => import('./pages/HomePage'));
-const TeachingsPage = lazy(() => import('./pages/TeachingsPage'));
-const TeachingDetailPage = lazy(() => import('./pages/TeachingDetailPage'));
-const AudiosPage = lazy(() => import('./pages/AudiosPage'));
-const AudioDetailPage = lazy(() => import('./pages/AudioDetailPage'));
-const VideosPage = lazy(() => import('./pages/VideosPage'));
-const VideoDetailPage = lazy(() => import('./pages/VideoDetailPage'));
-const QuestionsPage = lazy(() => import('./pages/QuestionsPage'));
-const QuestionDetailPage = lazy(() => import('./pages/QuestionDetailPage'));
-const SearchPage = lazy(() => import('./pages/SearchPage'));
-const ProfilePage = lazy(() => import('./pages/ProfilePage'));
-const FavoritesPage = lazy(() => import('./pages/FavoritesPage'));
-const LoginPage = lazy(() => import('./pages/LoginPage'));
-const RegisterPage = lazy(() => import('./pages/RegisterPage'));
-const NotFoundPage = lazy(() => import('./pages/NotFoundPage'));
 
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
       retry: 1,
       staleTime: 5 * 60 * 1000,
+      gcTime: 30 * 60 * 1000,
       refetchOnWindowFocus: false,
     },
   },
 });
 
+const {
+  HomePage, TeachingsPage, TeachingDetailPage, AudiosPage, AudioDetailPage, VideosPage,
+  VideoDetailPage, QuestionsPage, QuestionDetailPage, SearchPage, ProfilePage, FavoritesPage,
+  LoginPage, RegisterPage, ForgotPasswordPage, ResetPasswordPage, VerifyEmailPage, NotFoundPage,
+} = Pages;
+
+/** Pages réservées aux membres connectés : sinon redirection vers la connexion puis retour. */
+const RequireAuth = ({ children }: { children: JSX.Element }) => {
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
+  const location = useLocation();
+  if (!isAuthenticated) {
+    return <Navigate to="/connexion" replace state={{ from: location.pathname + location.search }} />;
+  }
+  return children;
+};
+
 const AppContent = () => {
-  // On sélectionne uniquement isDarkMode pour éviter les re-renders inutiles
   const isDarkMode = useUIStore((s) => s.isDarkMode);
 
-  // Source unique de vérité : on applique/retire la classe "dark" sur <html>
   useEffect(() => {
     const root = document.documentElement;
-    if (isDarkMode) {
-      root.classList.add('dark');
-    } else {
-      root.classList.remove('dark');
-    }
+    root.classList.toggle('dark', isDarkMode);
+    document.querySelector('meta[name="theme-color"]')?.setAttribute('content', isDarkMode ? '#121212' : '#1EA478');
   }, [isDarkMode]);
 
+  useEffect(() => {
+    warmUpServer(); // réveille Render pendant que la page s'affiche
+    prefetchAllPages(); // précharge toutes les pages => changement d'onglet instantané
+  }, []);
+
   return (
-    <BrowserRouter>
-      <Suspense fallback={<PageLoader />}>
+    <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+      <ScrollToTop />
+      <Layout>
         <Routes>
+          <Route path="/" element={<HomePage />} />
+          <Route path="/enseignements" element={<TeachingsPage />} />
+          <Route path="/enseignements/:id" element={<TeachingDetailPage />} />
+          <Route path="/audios" element={<AudiosPage />} />
+          <Route path="/audios/:id" element={<AudioDetailPage />} />
+          <Route path="/videos" element={<VideosPage />} />
+          <Route path="/videos/:id" element={<VideoDetailPage />} />
+          <Route path="/questions" element={<QuestionsPage />} />
+          <Route path="/questions/:id" element={<QuestionDetailPage />} />
+          <Route path="/recherche" element={<SearchPage />} />
+          <Route path="/profil" element={<RequireAuth><ProfilePage /></RequireAuth>} />
+          <Route path="/favoris" element={<RequireAuth><FavoritesPage /></RequireAuth>} />
           <Route path="/connexion" element={<LoginPage />} />
           <Route path="/inscription" element={<RegisterPage />} />
-
-          <Route
-            path="/*"
-            element={
-              <Layout>
-                <Suspense fallback={<PageLoader />}>
-                  <Routes>
-                    <Route path="/" element={<HomePage />} />
-                    <Route path="/enseignements" element={<TeachingsPage />} />
-                    <Route path="/enseignements/:id" element={<TeachingDetailPage />} />
-                    <Route path="/audios" element={<AudiosPage />} />
-                    <Route path="/audios/:id" element={<AudioDetailPage />} />
-                    <Route path="/videos" element={<VideosPage />} />
-                    <Route path="/videos/:id" element={<VideoDetailPage />} />
-                    <Route path="/questions" element={<QuestionsPage />} />
-                    <Route path="/questions/:id" element={<QuestionDetailPage />} />
-                    <Route path="/recherche" element={<SearchPage />} />
-                    <Route path="/profil" element={<ProfilePage />} />
-                    <Route path="/favoris" element={<FavoritesPage />} />
-                    <Route path="*" element={<NotFoundPage />} />
-                  </Routes>
-                </Suspense>
-              </Layout>
-            }
-          />
+          <Route path="/mot-de-passe-oublie" element={<ForgotPasswordPage />} />
+          <Route path="/reinitialiser-mot-de-passe" element={<ResetPasswordPage />} />
+          <Route path="/verifier-email" element={<VerifyEmailPage />} />
+          <Route path="*" element={<NotFoundPage />} />
         </Routes>
-      </Suspense>
-
+      </Layout>
       <AudioPlayer />
+      <Toaster />
+      <DownloadHelpModal />
     </BrowserRouter>
   );
 };

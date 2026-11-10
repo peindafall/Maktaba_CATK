@@ -20,7 +20,11 @@ class GlobalSearchView(APIView):
         query = request.query_params.get('q', '').strip()
         content_type = request.query_params.get('type', 'all')
         category = request.query_params.get('category', '')
-        limit = int(request.query_params.get('limit', 10))
+        try:
+            limit = max(1, min(int(request.query_params.get('limit', 10)), 50))
+        except ValueError:
+            limit = 10
+        query = query[:100]
 
         if not query:
             return Response({'query': query, 'results': {}, 'total': 0})
@@ -52,15 +56,18 @@ class GlobalSearchView(APIView):
                 Q(title_fr__icontains=query) | Q(title_en__icontains=query) |
                 Q(title_ar__icontains=query) | Q(description_fr__icontains=query)
             )
-            results['videos'] = VideoListSerializer(qs[:limit], many=True, context=ctx).data
+            results['videos'] = VideoListSerializer(qs.select_related('theme')[:limit], many=True, context=ctx).data
 
         if content_type in ('all', 'questions'):
             qs = Question.objects.filter(is_published=True).filter(
                 Q(title_fr__icontains=query) | Q(title_en__icontains=query) |
                 Q(title_ar__icontains=query) | Q(question_fr__icontains=query) |
+                Q(question_en__icontains=query) | Q(question_ar__icontains=query) |
                 Q(keywords__icontains=query)
             )
-            results['questions'] = QuestionListSerializer(qs[:limit], many=True, context=ctx).data
+            results['questions'] = QuestionListSerializer(
+                qs.select_related('category').prefetch_related('answers')[:limit], many=True, context=ctx
+            ).data
 
         total = sum(len(v) for v in results.values())
         return Response({'query': query, 'results': results, 'total': total})

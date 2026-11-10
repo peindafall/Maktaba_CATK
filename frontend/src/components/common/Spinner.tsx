@@ -1,4 +1,6 @@
+import { useTranslation } from 'react-i18next';
 import { cn } from '../../utils/helpers';
+import { useUIStore } from '../../stores/uiStore';
 
 interface SpinnerProps {
   size?: 'sm' | 'md' | 'lg';
@@ -18,11 +20,17 @@ export const Spinner = ({ size = 'md', className }: SpinnerProps) => {
   );
 };
 
-export const PageLoader = () => (
-  <div className="min-h-[50vh] flex items-center justify-center">
-    <div className="text-center space-y-4">
-      <Spinner size="lg" />
-      <p className="text-[var(--text-secondary)] animate-pulse">Chargement...</p>
+export const PageLoader = () => {
+  const { t } = useTranslation();
+  const serverWaking = useUIStore((s) => s.serverWaking);
+  return (
+    <div className="min-h-[50vh] flex items-center justify-center px-4">
+      <div className="text-center space-y-4">
+        <Spinner size="lg" className="mx-auto" />
+        <p className="text-[var(--text-secondary)] animate-pulse">
+          {serverWaking ? t('common.server_waking') : t('common.loading')}
+        </p>
+      </div>
     </div>
-  </div>
-);
+  );
+};

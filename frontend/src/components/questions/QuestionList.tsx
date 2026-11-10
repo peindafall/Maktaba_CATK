@@ -1,78 +1,57 @@
 import { useState } from 'react';
-import { motion } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
-import { HelpCircle } from 'lucide-react';
+import { HelpCircle, Search } from 'lucide-react';
 import { useQuestions } from '../../hooks/useQuestions';
+import { useDebounce } from '../../hooks/useDebounce';
 import { QuestionCard } from './QuestionCard';
 import { SkeletonList } from '../common/Skeleton';
 import { EmptyState } from '../common/EmptyState';
-import { Button } from '../common/Button';
+import { Pagination } from '../common/Pagination';
+import { ListError } from '../common/ListError';
 
 export const QuestionList = () => {
   const { t } = useTranslation();
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState('');
+  const debounced = useDebounce(search);
 
-  const { data, isLoading, isError, refetch } = useQuestions({
+  const { data, isLoading, isError, refetch, isPlaceholderData } = useQuestions({
     page,
     page_size: 12,
-    search: search || undefined,
+    ordering: '-created_at',
+    search: debounced || undefined,
   });
-
-  if (isError) {
-    return (
-      <div className="text-center py-12">
-        <p className="text-red-500 mb-4">{t('common.error')}</p>
-        <Button onClick={() => refetch()}>{t('common.retry')}</Button>
-      </div>
-    );
-  }
 
   return (
     <div>
-      {/* Search */}
-      <div className="mb-6">
+      <div className="relative mb-6">
+        <Search size={16} className="absolute start-3 top-1/2 -translate-y-1/2 text-[var(--text-secondary)]" />
         <input
           type="search"
           value={search}
-          onChange={(e) => { setSearch(e.target.value); setPage(1); }}
-          placeholder="Rechercher une question..."
-          className="input-base"
+          onChange={(e) => {
+            setSearch(e.target.value);
+            setPage(1);
+          }}
+          placeholder={t('questions.search_placeholder')}
+          className="input-base ps-9"
         />
       </div>
 
-      {isLoading ? (
-        <SkeletonList count={8} />
+      {isError ? (
+        <ListError onRetry={() => refetch()} />
+      ) : isLoading ? (
+        <SkeletonList count={4} />
       ) : !data?.results.length ? (
-        <EmptyState icon={<HelpCircle />} title={t('questions.no_questions')} />
+        <EmptyState icon={<HelpCircle className="w-full h-full" />} title={t('questions.no_questions')} />
       ) : (
         <>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {data.results.map((question, i) => (
-              <motion.div
-                key={question.id}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: i * 0.05 }}
-              >
-                <QuestionCard question={question} />
-              </motion.div>
+          <div className={`grid grid-cols-1 md:grid-cols-2 gap-4 transition-opacity ${isPlaceholderData ? 'opacity-60' : ''}`}>
+            {data.results.map((question) => (
+              <QuestionCard key={question.id} question={question} />
             ))}
           </div>
-
-          {data.total_pages > 1 && (
-            <div className="flex items-center justify-center gap-3 mt-10">
-              <Button variant="outline" size="sm" onClick={() => setPage((p) => Math.max(1, p - 1))} disabled={page === 1}>
-                {t('common.previous')}
-              </Button>
-              <span className="text-sm text-[var(--text-secondary)]">
-                {t('common.page')} {page} {t('common.of')} {data.total_pages}
-              </span>
-              <Button variant="outline" size="sm" onClick={() => setPage((p) => Math.min(data.total_pages, p + 1))} disabled={page === data.total_pages}>
-                {t('common.next')}
-              </Button>
-            </div>
-          )}
+          <Pagination page={page} totalPages={data.total_pages} onChange={setPage} />
         </>
       )}
     </div>

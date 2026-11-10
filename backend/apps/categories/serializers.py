@@ -2,6 +2,14 @@ from rest_framework import serializers
 from .models import Category
 
 
+class CategoryMiniSerializer(serializers.ModelSerializer):
+    """Version légère embarquée dans les enseignements / audios / questions / vidéos (noms FR/EN/AR)."""
+
+    class Meta:
+        model = Category
+        fields = ['id', 'name_fr', 'name_en', 'name_ar', 'slug', 'icon', 'color']
+
+
 class CategoryListSerializer(serializers.ModelSerializer):
     children_count = serializers.SerializerMethodField()
 

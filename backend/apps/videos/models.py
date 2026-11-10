@@ -29,7 +29,18 @@ class Video(models.Model):
     thumbnail_url = models.URLField(blank=True)
     youtube_url = models.URLField(blank=True)
     youtube_id = models.CharField(max_length=20, blank=True)
-    category = models.CharField(max_length=50, choices=VIDEO_CATEGORIES, default=CATEGORY_OTHER)
+    category = models.CharField(
+        'Type d\'émission', max_length=50, choices=VIDEO_CATEGORIES, default=CATEGORY_OTHER
+    )
+    theme = models.ForeignKey(
+        'categories.Category',
+        verbose_name='Thème',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='videos',
+        help_text='Thème de la vidéo (Soufisme, Fiqh, Tarikha...) — à créer dans « Catégories ».',
+    )
     duration = models.DurationField(null=True, blank=True)
     published_at = models.DateTimeField(null=True, blank=True)
     views_count = models.PositiveIntegerField(default=0)
@@ -53,7 +64,8 @@ class Video(models.Model):
                 self.youtube_id = extracted
         # Générer le thumbnail si on a un ID et pas encore de thumbnail
         if self.youtube_id and not self.thumbnail_url:
-            self.thumbnail_url = f'https://img.youtube.com/vi/{self.youtube_id}/maxresdefault.jpg'
+            # hqdefault existe pour toutes les vidéos (maxresdefault renvoie souvent 404)
+            self.thumbnail_url = f'https://img.youtube.com/vi/{self.youtube_id}/hqdefault.jpg'
         super().save(*args, **kwargs)
 
     @staticmethod

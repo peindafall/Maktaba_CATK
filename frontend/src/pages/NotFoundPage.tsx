@@ -15,8 +15,7 @@ const NotFoundPage = () => {
       >
         {/* 404 visual */}
         <div
-          className="text-9xl font-bold mb-4 bg-clip-text text-transparent"
-          style={{ background: 'linear-gradient(135deg, #1EA478, #114D0D)' }}
+          className="text-8xl sm:text-9xl font-bold mb-4 text-primary"
         >
           404
         </div>

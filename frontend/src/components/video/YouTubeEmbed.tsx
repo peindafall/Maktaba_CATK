@@ -1,24 +1,17 @@
 import { useRef } from 'react';
-import YouTube, { YouTubeEvent } from 'react-youtube';
+import YouTube, { type YouTubeEvent } from 'react-youtube';
 import { useIncrementVideoView } from '../../hooks/useVideos';
+import { cn } from '../../utils/helpers';
 
 interface YouTubeEmbedProps {
-  /** ID YouTube de la vidéo (ex: aoZdGEvtJU0) */
   videoId: string;
-  /** UUID du modèle Video en base (ex: 1f0ba5c8-...) */
   modelId?: string;
+  title?: string;
   className?: string;
-  /** Si true, on compte une vue au premier clic sur Play */
   trackView?: boolean;
 }
 
-export const YouTubeEmbed = ({
-  videoId,
-  modelId,
-  className,
-  trackView = true,
-}: YouTubeEmbedProps) => {
-  // Évite de compter plusieurs fois dans la même session
+export const YouTubeEmbed = ({ videoId, modelId, title, className, trackView = true }: YouTubeEmbedProps) => {
   const hasTracked = useRef(false);
   const incrementView = useIncrementVideoView();
 
@@ -29,19 +22,15 @@ export const YouTubeEmbed = ({
   };
 
   return (
-    <div
-      className={`relative aspect-video w-full rounded-2xl overflow-hidden shadow-xl ${className || ''}`}
-    >
+    <div className={cn('relative aspect-video w-full overflow-hidden bg-black shadow-xl', className)}>
       <YouTube
         videoId={videoId}
+        title={title}
         opts={{
           width: '100%',
           height: '100%',
-          playerVars: {
-            autoplay: 0,
-            modestbranding: 1,
-            rel: 0,
-          },
+          host: 'https://www.youtube-nocookie.com',
+          playerVars: { autoplay: 0, modestbranding: 1, rel: 0, playsinline: 1 },
         }}
         onPlay={handlePlay}
         className="absolute inset-0 w-full h-full"

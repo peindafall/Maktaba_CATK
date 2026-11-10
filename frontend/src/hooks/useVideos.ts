@@ -1,40 +1,40 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { keepPreviousData, useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { videoService } from '../services/videoService';
 
-export const useVideos = (params?: Record<string, unknown>) => {
-  return useQuery({
+export const useVideos = (params?: Record<string, unknown>) =>
+  useQuery({
     queryKey: ['videos', params],
     queryFn: () => videoService.getAll(params),
+    placeholderData: keepPreviousData,
   });
-};
 
-export const useVideo = (id: string) => {
-  return useQuery({
+export const useVideo = (id: string) =>
+  useQuery({
     queryKey: ['video', id],
     queryFn: () => videoService.getById(id),
     enabled: !!id,
   });
-};
 
-export const useLatestVideos = () => {
-  return useQuery({
+export const useLatestVideos = () =>
+  useQuery({
     queryKey: ['videos', 'latest'],
     queryFn: () => videoService.getLatest(),
   });
-};
 
-// ✅ NOUVEAU : hook qui incrémente les vues et met à jour le cache
+export const useVideoTypes = () =>
+  useQuery({ queryKey: ['video-types'], queryFn: videoService.getTypes, staleTime: 30 * 60 * 1000 });
+
+export const useVideoThemes = () =>
+  useQuery({ queryKey: ['video-themes'], queryFn: videoService.getThemes, staleTime: 30 * 60 * 1000 });
+
 export const useIncrementVideoView = () => {
   const queryClient = useQueryClient();
-
   return useMutation({
     mutationFn: (videoId: string) => videoService.incrementView(videoId),
     onSuccess: (data, videoId) => {
-      // Met à jour immédiatement le cache React Query
-      queryClient.setQueryData(['video', videoId], (old: unknown) => {
-        if (!old || typeof old !== 'object') return old;
-        return { ...(old as object), views_count: data.views_count };
-      });
+      queryClient.setQueryData(['video', videoId], (old: unknown) =>
+        old && typeof old === 'object' ? { ...(old as object), views_count: data.views_count } : old
+      );
     },
   });
 };

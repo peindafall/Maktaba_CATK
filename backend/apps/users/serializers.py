@@ -1,5 +1,6 @@
 from rest_framework import serializers
 from django.contrib.auth.password_validation import validate_password
+from django.core.exceptions import ValidationError as DjangoValidationError
 from .models import (
     Badge,
     Collection,
@@ -50,16 +51,40 @@ class UserDetailSerializer(serializers.ModelSerializer):
 
 
 class UserCreateSerializer(serializers.ModelSerializer):
-    password = serializers.CharField(write_only=True, validators=[validate_password])
+    email = serializers.EmailField(max_length=254)
+    username = serializers.CharField(max_length=150, min_length=2)
+    password = serializers.CharField(write_only=True, min_length=8, max_length=128)
     password_confirm = serializers.CharField(write_only=True)
+    preferred_language = serializers.ChoiceField(choices=['fr', 'en', 'ar'], required=False, default='fr')
 
     class Meta:
         model = User
         fields = ['email', 'username', 'first_name', 'last_name', 'password', 'password_confirm', 'preferred_language']
 
+    def validate_email(self, value):
+        value = value.strip().lower()
+        if User.objects.filter(email__iexact=value).exists():
+            raise serializers.ValidationError(
+                'Un compte existe déjà avec cet email. Connectez-vous ou utilisez « Mot de passe oublié ».',
+                code='email_taken',
+            )
+        return value
+
+    def validate_username(self, value):
+        value = value.strip()
+        if User.objects.filter(username__iexact=value).exists():
+            raise serializers.ValidationError("Ce nom d'utilisateur est déjà pris.", code='username_taken')
+        return value
+
     def validate(self, attrs):
         if attrs['password'] != attrs.pop('password_confirm'):
-            raise serializers.ValidationError({'password': 'Les mots de passe ne correspondent pas.'})
+            raise serializers.ValidationError({'password_confirm': 'Les mots de passe ne correspondent pas.'})
+        # Validation Django (longueur, mot de passe trop courant, ressemblance avec l'email...)
+        candidate = User(email=attrs.get('email'), username=attrs.get('username'))
+        try:
+            validate_password(attrs['password'], user=candidate)
+        except DjangoValidationError as exc:
+            raise serializers.ValidationError({'password': list(exc.messages)})
         return attrs
 
     def create(self, validated_data):
@@ -67,9 +92,16 @@ class UserCreateSerializer(serializers.ModelSerializer):
 
 
 class UserUpdateSerializer(serializers.ModelSerializer):
+    preferred_language = serializers.ChoiceField(choices=['fr', 'en', 'ar'], required=False)
+
     class Meta:
         model = User
         fields = ['username', 'first_name', 'last_name', 'avatar', 'phone', 'country', 'preferred_language', 'bio']
+
+    def validate_avatar(self, value):
+        if value and value.size > 2 * 1024 * 1024:
+            raise serializers.ValidationError('Image trop lourde (2 Mo maximum).')
+        return value
 
 
 class ChangePasswordSerializer(serializers.Serializer):
@@ -124,7 +156,8 @@ class SubscriptionSerializer(serializers.ModelSerializer):
             'id', 'plan', 'plan_detail', 'start_date', 'end_date',
             'status', 'auto_renewal', 'created_at', 'updated_at',
         ]
-        read_only_fields = ['id', 'created_at', 'updated_at']
+        # Le statut / les dates sont gérés par le serveur (après paiement), jamais par le client
+        read_only_fields = ['id', 'start_date', 'end_date', 'status', 'created_at', 'updated_at']
 
 
 class PaymentSerializer(serializers.ModelSerializer):
@@ -144,6 +177,11 @@ class FavoriteSerializer(serializers.ModelSerializer):
         model = Favorite
         fields = ['id', 'content_type', 'content_id', 'title', 'created_at']
         read_only_fields = ['id', 'created_at']
+
+
+class FavoriteToggleSerializer(serializers.Serializer):
+    content_type = serializers.ChoiceField(choices=['teaching', 'audio', 'video', 'question'])
+    content_id = serializers.UUIDField()
 
 
 class CollectionItemSerializer(serializers.ModelSerializer):

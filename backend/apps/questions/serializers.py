@@ -1,5 +1,8 @@
 from rest_framework import serializers
-from .models import Question, Answer
+
+from apps.categories.serializers import CategoryMiniSerializer
+
+from .models import Answer, Question
 
 
 class AnswerSerializer(serializers.ModelSerializer):
@@ -22,29 +25,38 @@ class AnswerSerializer(serializers.ModelSerializer):
 
 class QuestionListSerializer(serializers.ModelSerializer):
     category_name = serializers.CharField(source='category.name_fr', read_only=True, allow_null=True)
+    category_info = CategoryMiniSerializer(source='category', read_only=True)
     answers_count = serializers.SerializerMethodField()
-
-    class Meta:
-        model = Question
-        fields = [
-            'id', 'title_fr', 'title_en', 'title_ar',
-            'category_name', 'views_count', 'answers_count', 'created_at',
-        ]
-
-    def get_answers_count(self, obj):
-        return obj.answers.count()
-
-
-class QuestionDetailSerializer(serializers.ModelSerializer):
-    answers = AnswerSerializer(many=True, read_only=True)
-    category_name = serializers.CharField(source='category.name_fr', read_only=True, allow_null=True)
+    has_audio = serializers.SerializerMethodField()
 
     class Meta:
         model = Question
         fields = [
             'id', 'title_fr', 'title_en', 'title_ar',
             'question_fr', 'question_en', 'question_ar',
-            'category', 'category_name', 'keywords',
+            'category_name', 'category_info', 'views_count', 'answers_count', 'has_audio',
+            'source', 'created_at',
+        ]
+
+    # .all() réutilise le prefetch_related('answers') -> pas de requête SQL par question
+    def get_answers_count(self, obj):
+        return len(obj.answers.all())
+
+    def get_has_audio(self, obj):
+        return any(a.audio_file for a in obj.answers.all())
+
+
+class QuestionDetailSerializer(serializers.ModelSerializer):
+    answers = AnswerSerializer(many=True, read_only=True)
+    category_name = serializers.CharField(source='category.name_fr', read_only=True, allow_null=True)
+    category_info = CategoryMiniSerializer(source='category', read_only=True)
+
+    class Meta:
+        model = Question
+        fields = [
+            'id', 'title_fr', 'title_en', 'title_ar',
+            'question_fr', 'question_en', 'question_ar',
+            'category', 'category_name', 'category_info', 'keywords', 'source',
             'is_published', 'views_count', 'answers',
             'created_at', 'updated_at',
         ]
@@ -58,3 +70,35 @@ class QuestionCreateUpdateSerializer(serializers.ModelSerializer):
             'question_fr', 'question_en', 'question_ar',
             'category', 'keywords', 'is_published',
         ]
+
+
+class QuestionSubmitSerializer(serializers.Serializer):
+    """Question posée depuis le site (visiteur ou membre connecté). Publiée seulement après réponse."""
+
+    title = serializers.CharField(min_length=8, max_length=300)
+    question = serializers.CharField(min_length=10, max_length=4000)
+    category = serializers.UUIDField(required=False, allow_null=True)
+    name = serializers.CharField(max_length=120, required=False, allow_blank=True)
+    email = serializers.EmailField(required=False, allow_blank=True)
+    language = serializers.ChoiceField(choices=['fr', 'en', 'ar'], default='fr')
+    # Champ piège anti-robots : doit rester vide (caché dans le formulaire)
+    website = serializers.CharField(required=False, allow_blank=True)
+
+    def validate_website(self, value):
+        if value:
+            raise serializers.ValidationError('Requête refusée.')
+        return value
+
+
+class MyQuestionSerializer(serializers.ModelSerializer):
+    answers_count = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Question
+        fields = [
+            'id', 'title_fr', 'title_en', 'title_ar', 'question_fr', 'question_en', 'question_ar',
+            'status', 'is_published', 'answers_count', 'created_at',
+        ]
+
+    def get_answers_count(self, obj):
+        return len(obj.answers.all())

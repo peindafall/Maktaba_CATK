@@ -1,15 +1,10 @@
-export const validateEmail = (email: string): boolean => {
-  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
-};
+export const validateEmail = (email: string): boolean => /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email.trim());
 
-export const validatePassword = (password: string): boolean => {
-  return password.length >= 8;
-};
+export const validatePassword = (password: string): boolean => password.length >= 8;
 
-export const validateRequired = (value: string): boolean => {
-  return value.trim().length > 0;
-};
+/** Mot de passe uniquement numérique : refusé par Django (NumericPasswordValidator). */
+export const isNumericOnly = (password: string): boolean => /^\d+$/.test(password);
 
-export const validatePasswordMatch = (p1: string, p2: string): boolean => {
-  return p1 === p2;
-};
+export const validateRequired = (value: string): boolean => value.trim().length > 0;
+
+export const validatePasswordMatch = (p1: string, p2: string): boolean => p1 === p2;

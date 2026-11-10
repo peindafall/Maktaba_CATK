@@ -1,35 +1,36 @@
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { BookOpen, Headphones, Video, HelpCircle, Mail, Globe } from 'lucide-react';
+import { useLanguage } from '../../hooks/useLanguage';
 import Logo from '../../assets/logo.png';
+
+const LANGS = [
+  { code: 'fr', label: 'Français' },
+  { code: 'en', label: 'English' },
+  { code: 'ar', label: 'العربية' },
+] as const;
 
 export const Footer = () => {
   const { t } = useTranslation();
+  const { currentLanguage, changeLanguage } = useLanguage();
 
   return (
     <footer className="bg-[var(--surface)] border-t border-[var(--border-light)] mt-16">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
-          {/* Brand */}
-          <div className="md:col-span-2">
-            <img src={Logo} alt="Maktaba CATK" className="h-14 w-auto object-contain" />
-            <p className="text-[var(--text-secondary)] text-sm leading-relaxed max-w-xs">
-              Bibliothèque numérique des enseignements du Professeur Cheikh Ahmet Tidiane KEBE.
-              Accédez à des milliers d'enseignements islamiques authentiques.
-            </p>
-            <div className="flex items-center gap-3 mt-4">
-              <a
-                href="mailto:contact@catk.org"
-                className="flex items-center gap-1.5 text-sm text-[var(--text-secondary)] hover:text-primary transition-colors"
-              >
-                <Mail size={14} /> contact@catk.org
-              </a>
-            </div>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-8">
+          <div className="sm:col-span-2">
+            <img src={Logo} alt="Maktaba CATK" width={160} height={160} loading="lazy" className="h-24 w-auto object-contain mb-3 dark:brightness-110" />
+            <p className="text-[var(--text-secondary)] text-sm leading-relaxed max-w-sm">{t('footer.description')}</p>
+            <a
+              href="mailto:contact@catk.org"
+              className="inline-flex items-center gap-1.5 mt-4 text-sm text-[var(--text-secondary)] hover:text-primary transition-colors"
+            >
+              <Mail size={14} /> contact@catk.org
+            </a>
           </div>
 
-          {/* Navigation */}
           <div>
-            <h4 className="font-semibold text-[var(--text-primary)] mb-4">Navigation</h4>
+            <h4 className="font-semibold text-[var(--text-primary)] mb-4">{t('footer.navigation')}</h4>
             <ul className="space-y-2">
               {[
                 { to: '/enseignements', label: t('nav.teachings'), icon: <BookOpen size={14} /> },
@@ -38,10 +39,7 @@ export const Footer = () => {
                 { to: '/questions', label: t('nav.questions'), icon: <HelpCircle size={14} /> },
               ].map((link) => (
                 <li key={link.to}>
-                  <Link
-                    to={link.to}
-                    className="flex items-center gap-2 text-sm text-[var(--text-secondary)] hover:text-primary transition-colors"
-                  >
+                  <Link to={link.to} className="flex items-center gap-2 text-sm text-[var(--text-secondary)] hover:text-primary transition-colors">
                     {link.icon}
                     {link.label}
                   </Link>
@@ -50,37 +48,32 @@ export const Footer = () => {
             </ul>
           </div>
 
-          {/* Languages */}
           <div>
             <h4 className="font-semibold text-[var(--text-primary)] mb-4 flex items-center gap-2">
               <Globe size={16} /> {t('common.language')}
             </h4>
             <ul className="space-y-2">
-              {[
-                { code: 'fr', label: 'Français', flag: '🇫🇷' },
-                { code: 'en', label: 'English', flag: '🇬🇧' },
-                { code: 'ar', label: 'العربية', flag: '🇸🇦' },
-              ].map((lang) => (
+              {LANGS.map((lang) => (
                 <li key={lang.code}>
-                  <span className="flex items-center gap-2 text-sm text-[var(--text-secondary)]">
-                    {lang.flag} {lang.label}
-                  </span>
+                  <button
+                    onClick={() => changeLanguage(lang.code)}
+                    className={`text-sm transition-colors ${
+                      currentLanguage === lang.code ? 'text-primary font-semibold' : 'text-[var(--text-secondary)] hover:text-primary'
+                    }`}
+                  >
+                    {lang.label}
+                  </button>
                 </li>
               ))}
             </ul>
           </div>
         </div>
 
-        {/* Bottom bar */}
-        <div className="mt-10 pt-6 border-t border-[var(--border-light)] flex flex-col sm:flex-row justify-between items-center gap-4">
+        <div className="mt-10 pt-6 border-t border-[var(--border-light)] flex flex-col sm:flex-row justify-between items-center gap-2 text-center">
           <p className="text-sm text-[var(--text-secondary)]">
-            © {new Date().getFullYear()} Maktaba CATK. Tous droits réservés.
+            © {new Date().getFullYear()} Maktaba CATK. {t('footer.rights')}
           </p>
-          <div className="flex items-center gap-4">
-            <span className="text-xs text-[var(--text-secondary)]">
-              Enseignements du Professeur Cheikh Ahmet Tidiane KEBE
-            </span>
-          </div>
+          <span className="text-xs text-[var(--text-secondary)]">{t('footer.tagline')}</span>
         </div>
       </div>
     </footer>

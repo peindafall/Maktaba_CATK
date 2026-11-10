@@ -1,6 +1,8 @@
-import { useEffect } from 'react';
+import { useEffect, useId } from 'react';
+import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { cn } from '../../utils/helpers';
 
 interface ModalProps {
@@ -13,70 +15,75 @@ interface ModalProps {
 }
 
 export const Modal = ({ isOpen, onClose, title, children, size = 'md', className }: ModalProps) => {
-  useEffect(() => {
-    if (isOpen) {
-      document.body.style.overflow = 'hidden';
-    } else {
-      document.body.style.overflow = '';
-    }
-    return () => {
-      document.body.style.overflow = '';
-    };
-  }, [isOpen]);
+  const { t } = useTranslation();
+  const titleId = useId();
 
   useEffect(() => {
+    if (!isOpen) return;
+    const previous = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
     const handleKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') onClose();
     };
     document.addEventListener('keydown', handleKey);
-    return () => document.removeEventListener('keydown', handleKey);
-  }, [onClose]);
+    return () => {
+      document.body.style.overflow = previous;
+      document.removeEventListener('keydown', handleKey);
+    };
+  }, [isOpen, onClose]);
 
   const sizes = {
-    sm: 'max-w-sm',
-    md: 'max-w-md',
-    lg: 'max-w-2xl',
-    xl: 'max-w-4xl',
-    full: 'max-w-full mx-4',
+    sm: 'sm:max-w-sm',
+    md: 'sm:max-w-md',
+    lg: 'sm:max-w-2xl',
+    xl: 'sm:max-w-4xl',
+    full: 'sm:max-w-full sm:mx-4',
   };
 
-  return (
+  return createPortal(
     <AnimatePresence>
       {isOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-[80] flex items-end sm:items-center justify-center sm:p-4">
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="absolute inset-0 bg-black/50 backdrop-blur-sm"
+            className="absolute inset-0 bg-black/60 backdrop-blur-sm"
             onClick={onClose}
           />
           <motion.div
-            initial={{ opacity: 0, scale: 0.95, y: 20 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.95, y: 20 }}
-            transition={{ type: 'spring', duration: 0.3 }}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby={title ? titleId : undefined}
+            initial={{ opacity: 0, y: 40 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 40 }}
+            transition={{ type: 'spring', duration: 0.3, bounce: 0.15 }}
             className={cn(
-              'relative w-full bg-[var(--surface)] rounded-3xl shadow-2xl z-10',
+              // Sur mobile : panneau qui monte du bas (plus facile au pouce), sur ordinateur : fenêtre centrée
+              'relative w-full max-h-[90dvh] overflow-y-auto bg-[var(--surface)] rounded-t-3xl sm:rounded-3xl shadow-2xl z-10 pb-[env(safe-area-inset-bottom)]',
               sizes[size],
               className
             )}
           >
-            {title && (
-              <div className="flex items-center justify-between p-6 border-b border-[var(--border-light)]">
-                <h2 className="text-xl font-bold text-[var(--text-primary)]">{title}</h2>
+            {title ? (
+              <div className="sticky top-0 bg-[var(--surface)] flex items-center justify-between gap-4 px-6 py-4 border-b border-[var(--border-light)]">
+                <h2 id={titleId} className="text-lg font-bold text-[var(--text-primary)]">
+                  {title}
+                </h2>
                 <button
                   onClick={onClose}
+                  aria-label={t('common.close')}
                   className="p-2 rounded-xl hover:bg-[var(--border-light)] transition-colors"
                 >
                   <X size={20} />
                 </button>
               </div>
-            )}
-            {!title && (
+            ) : (
               <button
                 onClick={onClose}
-                className="absolute top-4 right-4 p-2 rounded-xl hover:bg-[var(--border-light)] transition-colors z-10"
+                aria-label={t('common.close')}
+                className="absolute top-4 end-4 p-2 rounded-xl hover:bg-[var(--border-light)] transition-colors z-10"
               >
                 <X size={20} />
               </button>
@@ -85,6 +92,7 @@ export const Modal = ({ isOpen, onClose, title, children, size = 'md', className
           </motion.div>
         </div>
       )}
-    </AnimatePresence>
+    </AnimatePresence>,
+    document.body
   );
 };

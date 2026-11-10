@@ -8,16 +8,8 @@ interface BadgeProps {
   className?: string;
 }
 
-export const Badge = ({
-  children,
-  color,
-  variant = 'soft',
-  size = 'sm',
-  className,
-}: BadgeProps) => {
-  const base = 'inline-flex items-center font-medium rounded-full';
+export const Badge = ({ children, color, variant = 'soft', size = 'sm', className }: BadgeProps) => {
   const sizes = { sm: 'px-2.5 py-0.5 text-xs', md: 'px-3 py-1 text-sm' };
-
   const defaultStyles =
     variant === 'solid'
       ? 'bg-primary text-white'
@@ -27,19 +19,17 @@ export const Badge = ({
 
   return (
     <span
-      className={cn(base, sizes[size], className)}
+      className={cn('inline-flex items-center font-medium rounded-full', sizes[size], !color && defaultStyles, className)}
       style={
         color
           ? {
-              backgroundColor:
-                variant === 'solid' ? color : `${color}20`,
+              backgroundColor: variant === 'solid' ? color : `${color}22`,
               color: variant === 'solid' ? '#fff' : color,
-              borderColor: variant === 'outline' ? color : undefined,
+              border: variant === 'outline' ? `1px solid ${color}` : undefined,
             }
           : undefined
       }
     >
-      {!color && <span className={defaultStyles} />}
       {children}
     </span>
   );

@@ -1,100 +1,89 @@
 import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useLocation, useNavigate, Navigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { motion } from 'framer-motion';
-import { Mail, Lock, Eye, EyeOff } from 'lucide-react';
+import { Mail } from 'lucide-react';
+import type { AxiosError } from 'axios';
 import { useAuth } from '../hooks/useAuth';
 import { Input } from '../components/common/Input';
+import { PasswordInput } from '../components/common/PasswordInput';
 import { Button } from '../components/common/Button';
-import Logo from '../assets/logo.png';
+import { AuthCard, FormError } from '../components/common/AuthCard';
+import { toast } from '../stores/toastStore';
+import { usePageTitle } from '../hooks/usePageTitle';
 
 const LoginPage = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const { loginMutation } = useAuth();
+  const location = useLocation();
+  const from = (location.state as { from?: string } | null)?.from || '/';
+  const { loginMutation, isAuthenticated } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
+  usePageTitle(t('auth.login_title'));
+
+  if (isAuthenticated && !loginMutation.isPending) return <Navigate to={from} replace />;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
     try {
       await loginMutation.mutateAsync({ email, password });
-      navigate('/');
-    } catch (err: unknown) {
-      setError('Email ou mot de passe incorrect.');
+      toast.success(t('auth.login_success'));
+      navigate(from, { replace: true });
+    } catch (err) {
+      const status = (err as AxiosError)?.response?.status;
+      if (!status) setError(t('auth.errors.network'));
+      else if (status === 429) setError(t('auth.errors.too_many'));
+      else if (status === 401 || status === 400) setError(t('auth.errors.invalid_credentials'));
+      else setError(t('auth.errors.generic'));
     }
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-[var(--background)] px-4">
-      <motion.div
-        initial={{ opacity: 0, y: 30 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="w-full max-w-md"
-      >
-        {/* Logo */}
-        <div className="text-center mb-8">
-          <Link to="/">
-            <img src={Logo} alt="Maktaba CATK" className="h-28 w-auto mx-auto mb-2" />
-          </Link>
-          <h1 className="text-2xl font-bold text-[var(--text-primary)]">{t('auth.login_title')}</h1>
-          <p className="text-[var(--text-secondary)] mt-1">Maktaba CATK</p>
-        </div>
-
-        <div className="card p-8">
-          <form onSubmit={handleSubmit} className="space-y-5">
-            <Input
-              type="email"
-              label={t('auth.email')}
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="votre@email.com"
-              leftIcon={<Mail size={16} />}
-              required
-              autoComplete="email"
-            />
-            <Input
-              type={showPassword ? 'text' : 'password'}
-              label={t('auth.password')}
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              leftIcon={<Lock size={16} />}
-              rightIcon={
-                <button type="button" onClick={() => setShowPassword(!showPassword)}>
-                  {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
-                </button>
-              }
-              required
-              autoComplete="current-password"
-            />
-
-            {error && (
-              <p className="text-sm text-red-500 bg-red-50 px-4 py-2 rounded-xl">{error}</p>
-            )}
-
-            <Button
-              type="submit"
-              className="w-full"
-              isLoading={loginMutation.isPending}
-            >
-              {t('auth.login_btn')}
-            </Button>
-          </form>
-
-          <div className="mt-6 text-center">
-            <p className="text-sm text-[var(--text-secondary)]">
-              {t('auth.no_account')}{' '}
-              <Link to="/inscription" className="text-primary font-semibold hover:underline">
-                {t('auth.register_btn')}
-              </Link>
-            </p>
+    <AuthCard title={t('auth.login_title')} subtitle="Maktaba CATK">
+      <form onSubmit={handleSubmit} className="space-y-5" noValidate>
+        <Input
+          type="email"
+          inputMode="email"
+          label={t('auth.email')}
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          placeholder={t('auth.email_placeholder')}
+          leftIcon={<Mail size={16} />}
+          required
+          autoComplete="email"
+          autoCapitalize="none"
+        />
+        <div>
+          <PasswordInput
+            label={t('auth.password')}
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            required
+            autoComplete="current-password"
+          />
+          <div className="text-end mt-2">
+            <Link to="/mot-de-passe-oublie" className="text-sm text-primary hover:underline">
+              {t('auth.forgot_password')}
+            </Link>
           </div>
         </div>
-      </motion.div>
-    </div>
+
+        <FormError message={error} />
+
+        <Button type="submit" className="w-full" isLoading={loginMutation.isPending}>
+          {t('auth.login_btn')}
+        </Button>
+      </form>
+
+      <p className="mt-6 text-center text-sm text-[var(--text-secondary)]">
+        {t('auth.no_account')}{' '}
+        <Link to="/inscription" state={{ from }} className="text-primary font-semibold hover:underline">
+          {t('auth.register_btn')}
+        </Link>
+      </p>
+    </AuthCard>
   );
 };
 

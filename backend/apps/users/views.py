@@ -1,10 +1,14 @@
-from django.db.models import Count, Sum
-from rest_framework import status, viewsets
+from django.db.models import Sum
+from drf_spectacular.utils import extend_schema
+from rest_framework import mixins, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from drf_spectacular.utils import extend_schema
+from rest_framework_simplejwt.exceptions import TokenError
+from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
+from rest_framework_simplejwt.tokens import RefreshToken
+from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 
 from .models import (
     Badge,
@@ -27,7 +31,9 @@ from .serializers import (
     CollectionItemSerializer,
     CollectionSerializer,
     FavoriteSerializer,
+    FavoriteToggleSerializer,
     PaymentSerializer,
+    ResetPasswordConfirmSerializer,
     ResetPasswordSerializer,
     SubscriptionPlanSerializer,
     SubscriptionSerializer,
@@ -49,6 +55,7 @@ user_service = UserService()
 class UserViewSet(viewsets.ModelViewSet):
     queryset = User.objects.all()
     permission_classes = [IsAuthenticated]
+    http_method_names = ['get', 'post', 'put', 'patch', 'delete', 'head', 'options']
 
     def get_serializer_class(self):
         if self.action == 'list':
@@ -60,14 +67,20 @@ class UserViewSet(viewsets.ModelViewSet):
         return UserDetailSerializer
 
     def get_permissions(self):
-        if self.action == 'list':
+        # Création / liste / suppression : réservées aux admins (l'inscription passe par /auth/register/)
+        if self.action in ('list', 'create', 'destroy'):
             return [IsAdminUser()]
-        return [IsOwnerOrAdmin()]
+        if self.action in ('me', 'update_profile', 'change_password', 'preferences', 'dashboard'):
+            return [IsAuthenticated()]
+        return [IsAuthenticated(), IsOwnerOrAdmin()]
 
-    @action(detail=False, methods=['get'], permission_classes=[IsAuthenticated])
+    @action(detail=False, methods=['get', 'patch'], permission_classes=[IsAuthenticated])
     def me(self, request):
-        serializer = UserDetailSerializer(request.user)
-        return Response(serializer.data)
+        if request.method == 'PATCH':
+            serializer = UserUpdateSerializer(request.user, data=request.data, partial=True)
+            serializer.is_valid(raise_exception=True)
+            serializer.save()
+        return Response(UserDetailSerializer(request.user, context={'request': request}).data)
 
     @action(detail=False, methods=['put', 'patch'], permission_classes=[IsAuthenticated])
     def update_profile(self, request):
@@ -86,7 +99,7 @@ class UserViewSet(viewsets.ModelViewSet):
         serializer = ChangePasswordSerializer(data=request.data, context={'request': request})
         serializer.is_valid(raise_exception=True)
         request.user.set_password(serializer.validated_data['new_password'])
-        request.user.save()
+        request.user.save(update_fields=['password'])
         return Response({'detail': 'Mot de passe modifié avec succès.'})
 
     @action(detail=False, methods=['get', 'patch'], permission_classes=[IsAuthenticated])
@@ -143,15 +156,16 @@ class SubscriptionPlanViewSet(viewsets.ReadOnlyModelViewSet):
     permission_classes = [AllowAny]
 
 
-class SubscriptionViewSet(viewsets.ModelViewSet):
+class SubscriptionViewSet(viewsets.ReadOnlyModelViewSet):
+    """
+    Lecture seule : avant, n'importe quel utilisateur pouvait se créer lui-même un abonnement
+    « actif » (Premium/Pro) sans payer. Les abonnements sont créés côté serveur après paiement.
+    """
     serializer_class = SubscriptionSerializer
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
         return Subscription.objects.filter(user=self.request.user).select_related('plan')
-
-    def perform_create(self, serializer):
-        serializer.save(user=self.request.user)
 
 
 class PaymentViewSet(viewsets.ReadOnlyModelViewSet):
@@ -162,15 +176,88 @@ class PaymentViewSet(viewsets.ReadOnlyModelViewSet):
         return Payment.objects.filter(user=self.request.user).select_related('subscription')
 
 
-class FavoriteViewSet(viewsets.ModelViewSet):
+def _favorite_models():
+    from apps.audios.models import Audio
+    from apps.questions.models import Question
+    from apps.teachings.models import Teaching
+    from apps.videos.models import Video
+
+    return {
+        'teaching': Teaching.objects.filter(status='published'),
+        'audio': Audio.objects.filter(is_published=True),
+        'video': Video.objects.filter(is_published=True),
+        'question': Question.objects.filter(is_published=True),
+    }
+
+
+class FavoriteViewSet(
+    mixins.ListModelMixin, mixins.DestroyModelMixin, mixins.RetrieveModelMixin, viewsets.GenericViewSet
+):
+    """
+    Favoris de l'utilisateur connecté (enseignements, audios, émissions, questions).
+      GET    /favorites/            -> liste légère [{content_type, content_id}] (pour colorer les cœurs)
+      POST   /favorites/toggle/     -> ajoute / retire  {content_type, content_id}
+      GET    /favorites/detailed/   -> contenus complets groupés par type (page « Mes favoris »)
+    """
     serializer_class = FavoriteSerializer
     permission_classes = [IsAuthenticated]
+    pagination_class = None
 
     def get_queryset(self):
         return Favorite.objects.filter(user=self.request.user)
 
-    def perform_create(self, serializer):
-        serializer.save(user=self.request.user)
+    @action(detail=False, methods=['post'])
+    def toggle(self, request):
+        serializer = FavoriteToggleSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        content_type = serializer.validated_data['content_type']
+        content_id = serializer.validated_data['content_id']
+
+        obj = _favorite_models()[content_type].filter(pk=content_id).first()
+        if obj is None:
+            return Response({'detail': 'Contenu introuvable.'}, status=status.HTTP_404_NOT_FOUND)
+
+        deleted, _ = Favorite.objects.filter(
+            user=request.user, content_type=content_type, content_id=content_id
+        ).delete()
+        if deleted:
+            return Response({'is_favorited': False, 'content_type': content_type, 'content_id': str(content_id)})
+
+        Favorite.objects.get_or_create(
+            user=request.user,
+            content_type=content_type,
+            content_id=content_id,
+            defaults={'title': (getattr(obj, 'title_fr', '') or '')[:500]},
+        )
+        return Response(
+            {'is_favorited': True, 'content_type': content_type, 'content_id': str(content_id)},
+            status=status.HTTP_201_CREATED,
+        )
+
+    @action(detail=False, methods=['get'])
+    def detailed(self, request):
+        from apps.audios.serializers import AudioListSerializer
+        from apps.questions.serializers import QuestionListSerializer
+        from apps.teachings.serializers import TeachingListSerializer
+        from apps.videos.serializers import VideoListSerializer
+
+        serializers_map = {
+            'teaching': ('teachings', TeachingListSerializer),
+            'audio': ('audios', AudioListSerializer),
+            'video': ('videos', VideoListSerializer),
+            'question': ('questions', QuestionListSerializer),
+        }
+        querysets = _favorite_models()
+        favorites = list(self.get_queryset().values('content_type', 'content_id', 'created_at'))
+        data = {}
+        ctx = {'request': request}
+        for ctype, (key, serializer_cls) in serializers_map.items():
+            ids = [f['content_id'] for f in favorites if f['content_type'] == ctype]
+            objects = {o.pk: o for o in querysets[ctype].filter(pk__in=ids)} if ids else {}
+            ordered = [objects[i] for i in ids if i in objects]  # plus récents d'abord
+            data[key] = serializer_cls(ordered, many=True, context=ctx).data
+        data['total'] = sum(len(v) for v in data.values())
+        return Response(data)
 
 
 class CollectionViewSet(viewsets.ModelViewSet):
@@ -224,7 +311,9 @@ class UserActivityViewSet(viewsets.ReadOnlyModelViewSet):
         return qs
 
 
-class SupportContributionViewSet(viewsets.ModelViewSet):
+class SupportContributionViewSet(
+    mixins.CreateModelMixin, mixins.ListModelMixin, mixins.RetrieveModelMixin, viewsets.GenericViewSet
+):
     serializer_class = SupportContributionSerializer
     permission_classes = [IsAuthenticated]
 
@@ -249,9 +338,50 @@ class UserBadgeViewSet(viewsets.ReadOnlyModelViewSet):
         return UserBadge.objects.filter(user=self.request.user).select_related('badge')
 
 
+class EmailTokenObtainPairSerializer(TokenObtainPairSerializer):
+    """Connexion insensible à la casse de l'email + renvoie le profil."""
+
+    def validate(self, attrs):
+        email = (attrs.get(self.username_field) or '').strip()
+        match = User.objects.filter(email__iexact=email).only('email').first()
+        attrs[self.username_field] = match.email if match else email
+        data = super().validate(attrs)
+        data['user'] = UserDetailSerializer(self.user).data
+        return data
+
+
+@extend_schema(tags=['auth'])
+class LoginView(TokenObtainPairView):
+    serializer_class = EmailTokenObtainPairSerializer
+    throttle_scope = 'auth'
+
+
+@extend_schema(tags=['auth'])
+class RefreshView(TokenRefreshView):
+    pass
+
+
+@extend_schema(tags=['auth'])
+class LogoutView(APIView):
+    """Invalide le refresh token (il ne pourra plus servir à obtenir un nouveau token)."""
+
+    permission_classes = [AllowAny]
+    throttle_scope = 'auth'
+
+    def post(self, request):
+        refresh = request.data.get('refresh')
+        if refresh:
+            try:
+                RefreshToken(refresh).blacklist()
+            except TokenError:
+                pass
+        return Response(status=status.HTTP_205_RESET_CONTENT)
+
+
 @extend_schema(tags=['auth'])
 class RegisterView(APIView):
     permission_classes = [AllowAny]
+    throttle_scope = 'auth'
 
     def post(self, request):
         serializer = UserCreateSerializer(data=request.data)
@@ -274,6 +404,7 @@ class RegisterView(APIView):
 @extend_schema(tags=['auth'])
 class VerifyEmailView(APIView):
     permission_classes = [AllowAny]
+    throttle_scope = 'auth'
 
     def post(self, request):
         serializer = VerifyEmailSerializer(data=request.data)
@@ -287,9 +418,26 @@ class VerifyEmailView(APIView):
 @extend_schema(tags=['auth'])
 class ResetPasswordView(APIView):
     permission_classes = [AllowAny]
+    throttle_scope = 'auth'
 
     def post(self, request):
         serializer = ResetPasswordSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         user_service.reset_password_request(serializer.validated_data['email'])
         return Response({'detail': 'Si cet email existe, un lien de réinitialisation a été envoyé.'})
+
+
+@extend_schema(tags=['auth'])
+class ResetPasswordConfirmView(APIView):
+    permission_classes = [AllowAny]
+    throttle_scope = 'auth'
+
+    def post(self, request):
+        serializer = ResetPasswordConfirmSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        ok = user_service.reset_password_confirm(
+            serializer.validated_data['token'], serializer.validated_data['new_password']
+        )
+        if ok:
+            return Response({'detail': 'Mot de passe réinitialisé. Vous pouvez vous connecter.'})
+        return Response({'detail': 'Lien invalide ou expiré.'}, status=status.HTTP_400_BAD_REQUEST)

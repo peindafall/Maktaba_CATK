@@ -4,8 +4,8 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.filters import SearchFilter, OrderingFilter
-from django.shortcuts import get_object_or_404
-from django.http import FileResponse
+from django.db.models import F
+from django.http import FileResponse, Http404
 import os
 
 from apps.core.pagination import StandardResultsSetPagination
@@ -19,9 +19,17 @@ teaching_service = TeachingService()
 
 
 class TeachingViewSet(viewsets.ModelViewSet):
+    # Permet aux @action(throttle_scope=...) de limiter certains endpoints (compteurs, questions)
+    throttle_scope = None
     queryset = Teaching.objects.filter(status='published').select_related('category', 'author').prefetch_related('tags')
     filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
-    filterset_fields = ['category', 'language', 'is_featured', 'status']
+    filterset_fields = {
+        'category': ['exact'],
+        'category__slug': ['exact'],
+        'language': ['exact'],
+        'is_featured': ['exact'],
+        'status': ['exact'],
+    }
     search_fields = ['title_fr', 'title_en', 'title_ar', 'description_fr']
     ordering_fields = ['published_at', 'views_count', 'downloads_count', 'created_at']
     ordering = ['-published_at']
@@ -47,44 +55,41 @@ class TeachingViewSet(viewsets.ModelViewSet):
             return Teaching.objects.all().select_related('category', 'author').prefetch_related('tags')
         return Teaching.objects.filter(status='published').select_related('category', 'author').prefetch_related('tags')
 
+    def _serve_pdf(self, teaching, as_attachment):
+        if not teaching.pdf_file:
+            raise Http404('Aucun fichier PDF')
+        try:
+            # .open() fonctionne avec le disque local ET un stockage S3 (contrairement à .path)
+            fh = teaching.pdf_file.open('rb')
+        except (FileNotFoundError, OSError):
+            raise Http404('Fichier introuvable sur le serveur')
+        return FileResponse(
+            fh,
+            as_attachment=as_attachment,
+            filename=os.path.basename(teaching.pdf_file.name),
+            content_type='application/pdf',
+        )
+
     # --- Téléchargement forcé (GET) ---
-    @action(detail=True, methods=['get'], permission_classes=[AllowAny])
+    @action(detail=True, methods=['get'], permission_classes=[AllowAny], throttle_scope='counters')
     def download(self, request, pk=None):
         teaching = self.get_object()
-        if not teaching.pdf_file:
-            return Response({'error': 'Aucun fichier PDF'}, status=status.HTTP_404_NOT_FOUND)
-        # Incrémenter le compteur de téléchargements
-        teaching.downloads_count += 1
-        teaching.save(update_fields=['downloads_count'])
-        # Servir le fichier en pièce jointe
-        file_path = teaching.pdf_file.path
-        if os.path.exists(file_path):
-            response = FileResponse(open(file_path, 'rb'), as_attachment=True, filename=os.path.basename(file_path))
-            return response
-        return Response({'error': 'Fichier introuvable'}, status=status.HTTP_404_NOT_FOUND)
+        response = self._serve_pdf(teaching, as_attachment=True)
+        Teaching.objects.filter(pk=teaching.pk).update(downloads_count=F('downloads_count') + 1)
+        return response
 
-    # --- Lecture en ligne (GET) : incrémente les vues et renvoie le fichier inline ---
+    # --- Lecture en ligne (GET) : renvoie le fichier inline (les vues sont comptées via POST /view/) ---
     @action(detail=True, methods=['get'], permission_classes=[AllowAny])
     def read(self, request, pk=None):
         teaching = self.get_object()
-        if not teaching.pdf_file:
-            return Response({'error': 'Aucun fichier PDF'}, status=status.HTTP_404_NOT_FOUND)
-        # Incrémenter le compteur de vues
-        teaching.views_count += 1
-        teaching.save(update_fields=['views_count'])
-        # Servir le fichier en ligne (inline)
-        file_path = teaching.pdf_file.path
-        if os.path.exists(file_path):
-            response = FileResponse(open(file_path, 'rb'), as_attachment=False, filename=os.path.basename(file_path))
-            return response
-        return Response({'error': 'Fichier introuvable'}, status=status.HTTP_404_NOT_FOUND)
+        return self._serve_pdf(teaching, as_attachment=False)
 
     # --- Incrémenter les vues (appelé par le frontend lors de l'ouverture du PDF) ---
-    @action(detail=True, methods=['post'], permission_classes=[AllowAny])
+    @action(detail=True, methods=['post'], permission_classes=[AllowAny], throttle_scope='counters')
     def view(self, request, pk=None):
         teaching = self.get_object()
-        teaching.views_count += 1
-        teaching.save(update_fields=['views_count'])
+        Teaching.objects.filter(pk=teaching.pk).update(views_count=F('views_count') + 1)
+        teaching.refresh_from_db(fields=['views_count'])
         return Response({'views_count': teaching.views_count})
 
     # --- Favoris ---
@@ -127,7 +132,10 @@ class TeachingViewSet(viewsets.ModelViewSet):
 
     @action(detail=False, methods=['get'], permission_classes=[AllowAny])
     def popular(self, request):
-        limit = int(request.query_params.get('limit', 10))
+        try:
+            limit = max(1, min(int(request.query_params.get('limit', 10)), 50))
+        except ValueError:
+            limit = 10
         queryset = teaching_service.get_popular(limit)
         serializer = TeachingListSerializer(queryset, many=True, context={'request': request})
         return Response(serializer.data)

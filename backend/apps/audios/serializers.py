@@ -1,9 +1,13 @@
 from rest_framework import serializers
+
+from apps.categories.serializers import CategoryMiniSerializer
+
 from .models import Audio
 
 
 class AudioListSerializer(serializers.ModelSerializer):
     category_name = serializers.CharField(source='category.name_fr', read_only=True, allow_null=True)
+    category_info = CategoryMiniSerializer(source='category', read_only=True)
     cover_image_url = serializers.SerializerMethodField()
     audio_url = serializers.SerializerMethodField()
     duration_seconds = serializers.SerializerMethodField()
@@ -12,8 +16,8 @@ class AudioListSerializer(serializers.ModelSerializer):
         model = Audio
         fields = [
             'id', 'title_fr', 'title_en', 'title_ar',
-            'description_fr', 'description_en', 'description_ar',   # ✅ AJOUTÉ
-            'category_name', 'language',
+            'description_fr', 'description_en', 'description_ar',
+            'category_name', 'category_info', 'language',
             'audio_url',
             'cover_image_url',
             'duration_seconds', 'plays_count', 'downloads_count',
@@ -40,6 +44,7 @@ class AudioListSerializer(serializers.ModelSerializer):
 
 class AudioDetailSerializer(serializers.ModelSerializer):
     category_name = serializers.CharField(source='category.name_fr', read_only=True, allow_null=True)
+    category_info = CategoryMiniSerializer(source='category', read_only=True)
     cover_image_url = serializers.SerializerMethodField()
     audio_url = serializers.SerializerMethodField()
     duration_seconds = serializers.SerializerMethodField()
@@ -49,7 +54,7 @@ class AudioDetailSerializer(serializers.ModelSerializer):
         fields = [
             'id', 'title_fr', 'title_en', 'title_ar',
             'description_fr', 'description_en', 'description_ar',
-            'category', 'category_name', 'language',
+            'category', 'category_name', 'category_info', 'language',
             'audio_url', 'cover_image_url',
             'duration_seconds', 'file_size',
             'plays_count', 'downloads_count', 'is_published',

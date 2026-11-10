@@ -3,6 +3,8 @@ import { defaultLayoutPlugin } from '@react-pdf-viewer/default-layout';
 import '@react-pdf-viewer/core/lib/styles/index.css';
 import '@react-pdf-viewer/default-layout/lib/styles/index.css';
 import { Spinner } from '../common/Spinner';
+// Worker servi par notre propre site (plus de dépendance au CDN unpkg.com)
+import pdfWorkerUrl from 'pdfjs-dist/build/pdf.worker.min.js?url';
 
 interface PDFViewerProps {
   fileUrl: string;
@@ -39,7 +41,7 @@ export const PDFViewer = ({ fileUrl, height }: PDFViewerProps) => {
         height ? '' : 'h-[60vh] sm:h-[70vh] md:h-[700px]'
       }`}
     >
-      <Worker workerUrl="https://unpkg.com/pdfjs-dist@3.11.174/build/pdf.worker.min.js">
+      <Worker workerUrl={pdfWorkerUrl}>
         <Viewer
           fileUrl={fileUrl}
           plugins={[defaultLayoutPluginInstance]}

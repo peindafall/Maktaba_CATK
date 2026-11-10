@@ -1,6 +1,10 @@
-import { Download, Loader2 } from 'lucide-react';
+import { Download } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { useDownloadAudio } from '../../hooks/useAudios';
+import { useQueryClient } from '@tanstack/react-query';
+import { audioService } from '../../services/audioService';
+import { triggerDownload, cn } from '../../utils/helpers';
+import { toast } from '../../stores/toastStore';
+import { useDownloadHelp } from '../common/DownloadHelpModal';
 import type { Audio } from '../../types';
 
 interface AudioDownloadButtonProps {
@@ -9,54 +13,44 @@ interface AudioDownloadButtonProps {
   className?: string;
 }
 
-export const AudioDownloadButton = ({
-  audio,
-  variant = 'primary',
-  className = '',
-}: AudioDownloadButtonProps) => {
+/**
+ * Télécharge VRAIMENT le fichier (le serveur répond « Content-Disposition: attachment »).
+ * Avant, l'attribut HTML « download » était ignoré (domaines différents) : sur iPhone l'audio
+ * s'ouvrait dans un nouvel onglet au lieu d'être enregistré dans l'app Fichiers.
+ */
+export const AudioDownloadButton = ({ audio, variant = 'primary', className = '' }: AudioDownloadButtonProps) => {
   const { t } = useTranslation();
-  const downloadMutation = useDownloadAudio();
+  const queryClient = useQueryClient();
+  const openHelp = useDownloadHelp((s) => s.open);
 
-  const handleDownload = async () => {
-    try {
-      const data = await downloadMutation.mutateAsync(audio.id);
-      if (!data.audio_url) return;
+  // Les réponses aux questions n'ont pas d'endpoint de téléchargement dédié : on télécharge le fichier directement
+  const url = audio.kind === 'answer' ? audio.audio_url : audioService.getDownloadUrl(audio.id);
 
-      // Force le téléchargement via un <a> invisible
-      const link = document.createElement('a');
-      link.href = data.audio_url;
-      link.download = data.filename || `audio-${audio.id}.mp3`;
-      link.target = '_blank';
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-    } catch (error) {
-      console.error('Erreur de téléchargement:', error);
+  const handleDownload = () => {
+    if (!url) return;
+    triggerDownload(url);
+    toast.success(t('downloads.started'), {
+      action: { label: t('downloads.help_link'), onClick: openHelp },
+      duration: 6000,
+    });
+    if (audio.kind !== 'answer') {
+      setTimeout(() => {
+        queryClient.invalidateQueries({ queryKey: ['audio', audio.id] });
+      }, 2500);
     }
   };
+
+  const label = t('audio.download');
 
   if (variant === 'icon') {
     return (
       <button
         onClick={handleDownload}
-        disabled={downloadMutation.isPending}
-        className={`p-2 rounded-xl hover:bg-[var(--border-light)] transition-colors disabled:opacity-50 ${className}`}
-        title={t('audio.download') || 'Télécharger'}
+        className={cn('p-2 rounded-xl hover:bg-[var(--border-light)] transition-colors', className)}
+        title={label}
+        aria-label={label}
       >
-        {downloadMutation.isPending ? <Loader2 size={16} className="animate-spin" /> : <Download size={16} />}
-      </button>
-    );
-  }
-
-  if (variant === 'outline') {
-    return (
-      <button
-        onClick={handleDownload}
-        disabled={downloadMutation.isPending}
-        className={`inline-flex items-center gap-2 px-4 py-2 rounded-xl border border-primary text-primary hover:bg-primary/5 transition-colors disabled:opacity-50 ${className}`}
-      >
-        {downloadMutation.isPending ? <Loader2 size={16} className="animate-spin" /> : <Download size={16} />}
-        {t('audio.download') || 'Télécharger'}
+        <Download size={18} />
       </button>
     );
   }
@@ -64,11 +58,16 @@ export const AudioDownloadButton = ({
   return (
     <button
       onClick={handleDownload}
-      disabled={downloadMutation.isPending}
-      className={`inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-primary text-white hover:bg-primary-dark transition-colors disabled:opacity-50 ${className}`}
+      className={cn(
+        'inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl font-medium transition-colors',
+        variant === 'outline'
+          ? 'border border-primary text-primary hover:bg-primary/5'
+          : 'bg-primary text-white hover:bg-primary-dark',
+        className
+      )}
     >
-      {downloadMutation.isPending ? <Loader2 size={16} className="animate-spin" /> : <Download size={16} />}
-      {t('audio.download') || 'Télécharger'}
+      <Download size={16} />
+      {label}
     </button>
   );
 };

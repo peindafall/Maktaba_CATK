@@ -19,9 +19,9 @@ export const SearchResults = ({ results, query }: SearchResultsProps) => {
   if (total === 0) {
     return (
       <EmptyState
-        icon={<Search />}
+        icon={<Search className="w-full h-full" />}
         title={t('search.no_results')}
-        description={`Aucun résultat pour "${query}". Essayez d'autres mots-clés.`}
+        description={t('search.no_results_desc', { query })}
       />
     );
   }
@@ -29,7 +29,7 @@ export const SearchResults = ({ results, query }: SearchResultsProps) => {
   return (
     <div className="space-y-10">
       <p className="text-[var(--text-secondary)] text-sm">
-        {t('search.results_found', { count: total })} pour &ldquo;{query}&rdquo;
+        {t('search.results_found', { count: total, query })}
       </p>
 
       {/* Teachings */}
@@ -38,9 +38,9 @@ export const SearchResults = ({ results, query }: SearchResultsProps) => {
           <h2 className="text-lg font-bold text-[var(--text-primary)] mb-4">
             {t('search.type_teachings')} ({results.results.teachings.length})
           </h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            {results.results.teachings.map((t) => (
-              <TeachingCard key={t.id} teaching={t} />
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
+            {results.results.teachings.map((item) => (
+              <TeachingCard key={item.id} teaching={item} />
             ))}
           </div>
         </section>
@@ -52,7 +52,7 @@ export const SearchResults = ({ results, query }: SearchResultsProps) => {
           <h2 className="text-lg font-bold text-[var(--text-primary)] mb-4">
             {t('search.type_audios')} ({results.results.audios.length})
           </h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
             {results.results.audios.map((a) => (
               <AudioCard key={a.id} audio={a} />
             ))}
@@ -66,7 +66,7 @@ export const SearchResults = ({ results, query }: SearchResultsProps) => {
           <h2 className="text-lg font-bold text-[var(--text-primary)] mb-4">
             {t('search.type_videos')} ({results.results.videos.length})
           </h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
             {results.results.videos.map((v) => (
               <VideoCard key={v.id} video={v} />
             ))}

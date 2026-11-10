@@ -1,5 +1,8 @@
 from rest_framework import serializers
-from .models import Teaching, Tag
+
+from apps.categories.serializers import CategoryMiniSerializer
+
+from .models import Tag, Teaching
 
 
 class TagSerializer(serializers.ModelSerializer):
@@ -10,6 +13,7 @@ class TagSerializer(serializers.ModelSerializer):
 
 class TeachingListSerializer(serializers.ModelSerializer):
     category_name = serializers.SerializerMethodField()
+    category_info = CategoryMiniSerializer(source='category', read_only=True)
     cover_image_url = serializers.SerializerMethodField()
     author_name = serializers.SerializerMethodField()
 
@@ -17,7 +21,8 @@ class TeachingListSerializer(serializers.ModelSerializer):
         model = Teaching
         fields = [
             'id', 'title_fr', 'title_en', 'title_ar',
-            'category_name', 'cover_image_url', 'language',
+            'description_fr', 'description_en', 'description_ar',
+            'category_name', 'category_info', 'cover_image_url', 'language',
             'views_count', 'downloads_count', 'published_at',
             'is_featured', 'author_name', 'status',
         ]
@@ -40,6 +45,7 @@ class TeachingListSerializer(serializers.ModelSerializer):
 class TeachingDetailSerializer(serializers.ModelSerializer):
     tags = TagSerializer(many=True, read_only=True)
     category_name = serializers.SerializerMethodField()
+    category_info = CategoryMiniSerializer(source='category', read_only=True)
     cover_image_url = serializers.SerializerMethodField()
     pdf_file_url = serializers.SerializerMethodField()
     author_name = serializers.SerializerMethodField()
@@ -50,7 +56,7 @@ class TeachingDetailSerializer(serializers.ModelSerializer):
             'id', 'title_fr', 'title_en', 'title_ar',
             'description_fr', 'description_en', 'description_ar',
             'summary_fr', 'summary_en', 'summary_ar',
-            'category', 'category_name', 'cover_image_url', 'pdf_file_url',
+            'category', 'category_name', 'category_info', 'cover_image_url', 'pdf_file_url',
             'language', 'author', 'author_name', 'status', 'tags',
             'views_count', 'downloads_count', 'is_featured',
             'published_at', 'created_at', 'updated_at',

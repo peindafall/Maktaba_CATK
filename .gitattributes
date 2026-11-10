@@ -1,0 +1,4 @@
+# Les scripts shell doivent rester en fin de ligne Unix (LF), sinon Render/Docker plante (« bad interpreter »)
+*.sh text eol=lf
+start.sh text eol=lf
+build.sh text eol=lf

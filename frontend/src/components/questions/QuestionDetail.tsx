@@ -1,167 +1,124 @@
 import { useEffect, useRef } from 'react';
-import { motion } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
-import { Link } from 'react-router-dom';
-import { ArrowLeft, Eye, HelpCircle, Headphones } from 'lucide-react';
-import type { Question, Audio } from '../../types';
+import { Eye, HelpCircle, Headphones, Pause } from 'lucide-react';
+import type { Audio, Question } from '../../types';
 import { useLanguage } from '../../hooks/useLanguage';
-import { getLocalizedField, formatNumber } from '../../utils/formatters';
+import { getLocalizedField, formatNumber, formatDuration, getCategoryName } from '../../utils/formatters';
 import { usePlayerStore } from '../../stores/playerStore';
 import { useIncrementQuestionView } from '../../hooks/useQuestions';
+import { FavoriteButton } from '../common/FavoriteButton';
+import { ShareButton } from '../common/ShareButton';
+import { BackLink } from '../common/BackLink';
+import { Badge } from '../common/Badge';
+import { AudioDownloadButton } from '../audio/AudioDownloadButton';
 
 interface QuestionDetailProps {
   question: Question;
 }
 
 export const QuestionDetail = ({ question }: QuestionDetailProps) => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const { currentLanguage } = useLanguage();
-  const { setCurrentAudio, currentAudio, isPlaying, togglePlay } = usePlayerStore();
+  const playAudio = usePlayerStore((s) => s.playAudio);
+  const currentId = usePlayerStore((s) => s.currentAudio?.id);
+  const isPlaying = usePlayerStore((s) => s.isPlaying);
   const incrementView = useIncrementQuestionView();
-  const hasTracked = useRef(false);
+  const tracked = useRef<string | null>(null);
 
-  // Incrémenter le compteur de vues au premier rendu
   useEffect(() => {
-    if (hasTracked.current) return;
-    hasTracked.current = true;
+    if (tracked.current === question.id) return;
+    tracked.current = question.id;
     incrementView.mutate(question.id);
-  }, [question.id]);
+  }, [question.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const title = getLocalizedField(question as unknown as Record<string, unknown>, 'title', currentLanguage);
-  const questionText = getLocalizedField(question as unknown as Record<string, unknown>, 'question', currentLanguage);
-  const categoryName = question.category
-    ? getLocalizedField(question.category as unknown as Record<string, unknown>, 'name', currentLanguage)
-    : '';
+  const title = getLocalizedField(question, 'title', currentLanguage);
+  const questionText = getLocalizedField(question, 'question', currentLanguage);
+  const categoryName = getCategoryName(question.category_info, currentLanguage, question.category_name);
 
-  const handlePlayAnswer = (answer: Question['answers'][0]) => {
-    // Si c'est le même audio qui joue, on toggle
-    if (currentAudio?.id === answer.id) {
-      togglePlay();
-      return;
-    }
-
-    // Sinon on charge un nouvel audio
-    const audioItem: Audio = {
-      id: answer.id,
-      title_fr: question.title_fr,
-      title_en: question.title_en,
-      title_ar: question.title_ar,
-      category: question.category,
-      language: answer.language,
-      audio_url: answer.audio_url,        // audio_url (pas audio_file)
-      cover_image_url: '',
-      duration: answer.duration,
-      duration_seconds: undefined,
-      plays_count: 0,
-      downloads_count: 0,                  // requis par le type Audio
-      is_published: true,
-      created_at: '',
-      updated_at: '',
-    } as unknown as Audio;
-
-    setCurrentAudio(audioItem);
-  };
-
-  const isAnswerPlaying = (answerId: string) =>
-    currentAudio?.id === answerId && isPlaying;
+  const toAudio = (answer: NonNullable<Question['answers']>[number]): Audio => ({
+    id: answer.id,
+    kind: 'answer',
+    title_fr: question.title_fr,
+    title_en: question.title_en,
+    title_ar: question.title_ar,
+    language: answer.language,
+    audio_url: answer.audio_url || '',
+    cover_image_url: null,
+    duration_seconds: null,
+    plays_count: 0,
+    downloads_count: 0,
+  });
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-8"
-    >
-      <Link
-        to="/questions"
-        className="inline-flex items-center gap-1.5 text-sm text-[var(--text-secondary)] hover:text-primary mb-6 transition-colors"
-      >
-        <ArrowLeft size={16} /> {t('common.back')}
-      </Link>
+    <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+      <BackLink fallback="/questions" />
 
-      <div className="card p-6 lg:p-8">
-        {/* Header */}
-        <div className="flex items-start gap-3 mb-6">
+      <article className="card p-5 sm:p-6 lg:p-8">
+        <header className="flex items-start gap-3 mb-6">
           <div className="flex-shrink-0 w-10 h-10 rounded-2xl bg-primary/10 flex items-center justify-center">
             <HelpCircle size={20} className="text-primary" />
           </div>
-          <div>
+          <div className="flex-1 min-w-0">
             {categoryName && (
-              <span
-                className="inline-block text-xs font-medium px-2.5 py-1 rounded-full mb-2"
-                style={{
-                  backgroundColor: `${question.category?.color || '#1EA478'}20`,
-                  color: question.category?.color || '#1EA478',
-                }}
-              >
+              <Badge color={question.category_info?.color} className="mb-2">
                 {categoryName}
-              </span>
+              </Badge>
             )}
-            <h1 className="text-xl lg:text-2xl font-bold text-[var(--text-primary)]">{title}</h1>
-            <div className="flex items-center gap-2 mt-2 text-xs text-[var(--text-secondary)]">
-              <Eye size={12} /> {formatNumber(question.views_count)} vues
-              {question.keywords && (
-                <span className="ml-2">· {question.keywords}</span>
-              )}
+            <h1 className="text-xl lg:text-2xl font-bold text-[var(--text-primary)] break-words">{title}</h1>
+            <div className="flex flex-wrap items-center gap-2 mt-2 text-xs text-[var(--text-secondary)]">
+              <Eye size={12} /> {formatNumber(question.views_count, i18n.language)} {t('questions.views')}
+              {question.source === 'public' && <span>· {t('questions.from_visitor')}</span>}
             </div>
           </div>
-        </div>
-
-        {/* Question text */}
-        {questionText && (
-          <div className="mb-6 p-4 rounded-2xl bg-[var(--border-light)]/50">
-            <h2 className="text-sm font-semibold text-[var(--text-secondary)] uppercase tracking-wide mb-2">
-              Question
-            </h2>
-            <p className="text-[var(--text-primary)] leading-relaxed whitespace-pre-line">{questionText}</p>
+          <div className="flex gap-2">
+            <FavoriteButton type="question" id={question.id} title={question.title_fr} size="md" />
+            <ShareButton title={title} />
           </div>
+        </header>
+
+        {questionText && (
+          <section className="mb-6 p-4 rounded-2xl bg-[var(--border-light)]/50">
+            <h2 className="text-xs font-semibold text-[var(--text-secondary)] uppercase tracking-wide mb-2">{t('questions.question_label')}</h2>
+            <p className="text-[var(--text-primary)] leading-relaxed whitespace-pre-line break-words">{questionText}</p>
+          </section>
         )}
 
-        {/* Answers */}
-        {question.answers?.length > 0 && (
-          <div className="space-y-4">
-            <h2 className="text-sm font-semibold text-[var(--text-secondary)] uppercase tracking-wide">
-              {t('questions.answer')}
-            </h2>
+        {!!question.answers?.length && (
+          <section className="space-y-4">
+            <h2 className="text-xs font-semibold text-[var(--text-secondary)] uppercase tracking-wide">{t('questions.answer')}</h2>
             {question.answers.map((answer) => {
-              const transcript = getLocalizedField(answer as unknown as Record<string, unknown>, 'transcript', currentLanguage);
-              const playing = isAnswerPlaying(answer.id);
+              const transcript = getLocalizedField(answer, 'transcript', currentLanguage);
+              const playing = currentId === answer.id && isPlaying;
+              const audio = toAudio(answer);
               return (
                 <div key={answer.id} className="p-4 rounded-2xl border border-[var(--border-light)]">
-                  {/* Bouton lecture audio */}
                   {answer.audio_url && (
-                    <button
-                      onClick={() => handlePlayAnswer(answer)}
-                      className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-colors mb-4 ${
-                        playing
-                          ? 'bg-primary/10 text-primary border border-primary/30'
-                          : 'bg-primary text-white hover:bg-primary-dark'
-                      }`}
-                    >
-                      <Headphones size={15} />
-                      {playing
-                        ? t('audio.pause', 'Pause')
-                        : t('questions.listen_answer', 'Écouter la réponse')}
-                      {answer.duration && ` (${answer.duration})`}
-                    </button>
+                    <div className="flex flex-wrap items-center gap-2 mb-4">
+                      <button
+                        onClick={() => playAudio(audio)}
+                        className={`inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold transition-colors ${
+                          playing ? 'bg-primary/10 text-primary border border-primary/30' : 'bg-primary text-white hover:bg-primary-dark'
+                        }`}
+                      >
+                        {playing ? <Pause size={15} /> : <Headphones size={15} />}
+                        {playing ? t('audio.pause') : t('questions.listen_answer')}
+                        {answer.duration && <span className="opacity-80">({formatDuration(answer.duration)})</span>}
+                      </button>
+                      <AudioDownloadButton audio={audio} variant="outline" className="text-sm" />
+                    </div>
                   )}
-
-                  {/* Transcription avec sauts de ligne préservés */}
                   {transcript && (
                     <div>
-                      <h3 className="text-xs font-medium text-[var(--text-secondary)] uppercase mb-2">
-                        {t('questions.transcript', 'Transcription')}
-                      </h3>
-                      <div className="text-[var(--text-primary)] leading-relaxed text-sm whitespace-pre-line">
-                        {transcript}
-                      </div>
+                      <h3 className="text-xs font-medium text-[var(--text-secondary)] uppercase mb-2">{t('questions.transcript')}</h3>
+                      <div className="text-[var(--text-primary)] leading-relaxed text-sm whitespace-pre-line break-words">{transcript}</div>
                     </div>
                   )}
                 </div>
               );
             })}
-          </div>
+          </section>
         )}
-      </div>
-    </motion.div>
+      </article>
+    </div>
   );
 };

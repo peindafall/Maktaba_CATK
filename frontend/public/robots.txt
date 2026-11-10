@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+Disallow: /profil
+Disallow: /favoris

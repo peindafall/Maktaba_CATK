@@ -1,5 +1,6 @@
 import { Component, type ErrorInfo, type ReactNode } from 'react';
 import { AlertTriangle } from 'lucide-react';
+import i18n from '../../i18n/config';
 import { Button } from './Button';
 
 interface Props {
@@ -9,18 +10,30 @@ interface Props {
 
 interface State {
   hasError: boolean;
-  error: Error | null;
 }
 
-export class ErrorBoundary extends Component<Props, State> {
-  state: State = { hasError: false, error: null };
+const RELOAD_FLAG = 'catk-chunk-reload';
 
-  static getDerivedStateFromError(error: Error): State {
-    return { hasError: true, error };
+/** Après un nouveau déploiement Netlify, les anciens fichiers JS n'existent plus : on recharge une fois. */
+const isChunkError = (error: Error) =>
+  /Failed to fetch dynamically imported module|Importing a module script failed|error loading dynamically imported module|ChunkLoadError/i.test(
+    error?.message || ''
+  );
+
+export class ErrorBoundary extends Component<Props, State> {
+  state: State = { hasError: false };
+
+  static getDerivedStateFromError(): State {
+    return { hasError: true };
   }
 
   componentDidCatch(error: Error, info: ErrorInfo) {
-    console.error('ErrorBoundary caught:', error, info);
+    if (isChunkError(error) && !sessionStorage.getItem(RELOAD_FLAG)) {
+      sessionStorage.setItem(RELOAD_FLAG, '1');
+      window.location.reload();
+      return;
+    }
+    console.error('ErrorBoundary:', error, info);
   }
 
   render() {
@@ -30,14 +43,15 @@ export class ErrorBoundary extends Component<Props, State> {
         <div className="min-h-[50vh] flex items-center justify-center p-8">
           <div className="text-center max-w-md">
             <AlertTriangle className="w-16 h-16 text-red-400 mx-auto mb-4" />
-            <h2 className="text-2xl font-bold text-[var(--text-primary)] mb-2">
-              Une erreur s'est produite
-            </h2>
-            <p className="text-[var(--text-secondary)] mb-6">
-              {this.state.error?.message || 'Erreur inattendue.'}
-            </p>
-            <Button onClick={() => this.setState({ hasError: false, error: null })}>
-              Réessayer
+            <h2 className="text-2xl font-bold text-[var(--text-primary)] mb-2">{i18n.t('errors.boundary_title')}</h2>
+            <p className="text-[var(--text-secondary)] mb-6">{i18n.t('errors.boundary_desc')}</p>
+            <Button
+              onClick={() => {
+                sessionStorage.removeItem(RELOAD_FLAG);
+                window.location.reload();
+              }}
+            >
+              {i18n.t('errors.reload')}
             </Button>
           </div>
         </div>

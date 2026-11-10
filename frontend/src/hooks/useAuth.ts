@@ -1,28 +1,31 @@
-import { useMutation } from '@tanstack/react-query';
-import { authService } from '../services/authService';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { authService, type AuthResponse } from '../services/authService';
+import { tokenStorage } from '../services/api';
 import { useAuthStore } from '../stores/authStore';
+import i18n from '../i18n/config';
 
 export const useAuth = () => {
-  const { user, isAuthenticated, login, logout } = useAuthStore();
+  const queryClient = useQueryClient();
+  const user = useAuthStore((s) => s.user);
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
+  const storeLogin = useAuthStore((s) => s.login);
+  const storeLogout = useAuthStore((s) => s.logout);
 
-  // Helper : après avoir stocké les tokens, si user absent, on va le chercher
-  const finalizeLogin = async (data: { access: string; refresh: string; user?: any }) => {
+  const finalizeLogin = async (data: AuthResponse) => {
     if (!data?.access || !data?.refresh) {
       throw new Error('Réponse d\'authentification invalide');
     }
-    localStorage.setItem('access_token', data.access);
-    localStorage.setItem('refresh_token', data.refresh);
-
+    tokenStorage.set(data.access, data.refresh);
     let finalUser = data.user;
     if (!finalUser) {
-      // Le backend n'a pas renvoyé l'utilisateur → on va le chercher
       try {
         finalUser = await authService.getProfile();
-      } catch (e) {
-        console.error('Impossible de récupérer le profil après connexion', e);
+      } catch {
+        finalUser = null;
       }
     }
-    login(finalUser, data.access, data.refresh);
+    storeLogin(finalUser);
+    queryClient.invalidateQueries({ queryKey: ['favorites'] });
   };
 
   const loginMutation = useMutation({
@@ -31,29 +34,23 @@ export const useAuth = () => {
   });
 
   const registerMutation = useMutation({
-    mutationFn: authService.register,
+    mutationFn: (payload: Parameters<typeof authService.register>[0]) =>
+      authService.register({ ...payload, preferred_language: (i18n.resolvedLanguage || 'fr').split('-')[0] }),
     onSuccess: finalizeLogin,
   });
 
-  const handleLogout = async () => {
-    const refreshToken = localStorage.getItem('refresh_token');
+  const logout = async () => {
+    const refreshToken = tokenStorage.getRefresh();
+    tokenStorage.clear();
+    storeLogout();
+    // On vide les données privées (favoris, mes questions…) du cache
+    queryClient.removeQueries({ queryKey: ['favorites'] });
+    queryClient.removeQueries({ queryKey: ['favorites-detailed'] });
+    queryClient.removeQueries({ queryKey: ['my-questions'] });
     if (refreshToken) {
-      try {
-        await authService.logout(refreshToken);
-      } catch {
-        // ignore
-      }
+      authService.logout(refreshToken).catch(() => {}); // invalide le token côté serveur
     }
-    localStorage.removeItem('access_token');
-    localStorage.removeItem('refresh_token');
-    logout();
   };
 
-  return {
-    user,
-    isAuthenticated,
-    loginMutation,
-    registerMutation,
-    logout: handleLogout,
-  };
+  return { user, isAuthenticated, loginMutation, registerMutation, logout };
 };

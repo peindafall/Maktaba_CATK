@@ -1,15 +1,19 @@
 from rest_framework import serializers
+from apps.categories.serializers import CategoryMiniSerializer
+
 from .models import Video
 
 
 class VideoListSerializer(serializers.ModelSerializer):
     duration_seconds = serializers.SerializerMethodField()
+    theme_info = CategoryMiniSerializer(source='theme', read_only=True)
+    category_label = serializers.CharField(source='get_category_display', read_only=True)
 
     class Meta:
         model = Video
         fields = [
             'id', 'title_fr', 'title_en', 'title_ar',
-            'thumbnail_url', 'youtube_id', 'category',
+            'thumbnail_url', 'youtube_id', 'category', 'category_label', 'theme', 'theme_info',
             'duration_seconds', 'views_count', 'is_published', 'published_at',
         ]
 
@@ -21,13 +25,16 @@ class VideoListSerializer(serializers.ModelSerializer):
 
 class VideoDetailSerializer(serializers.ModelSerializer):
     duration_seconds = serializers.SerializerMethodField()
+    theme_info = CategoryMiniSerializer(source='theme', read_only=True)
+    category_label = serializers.CharField(source='get_category_display', read_only=True)
 
     class Meta:
         model = Video
         fields = [
             'id', 'title_fr', 'title_en', 'title_ar',
             'description_fr', 'description_en', 'description_ar',
-            'thumbnail_url', 'youtube_url', 'youtube_id', 'category',
+            'thumbnail_url', 'youtube_url', 'youtube_id', 'category', 'category_label',
+            'theme', 'theme_info',
             'duration_seconds', 'views_count', 'is_published',
             'published_at', 'created_at', 'updated_at',
         ]
@@ -45,5 +52,5 @@ class VideoCreateUpdateSerializer(serializers.ModelSerializer):
             'title_fr', 'title_en', 'title_ar',
             'description_fr', 'description_en', 'description_ar',
             'youtube_url', 'youtube_id', 'thumbnail_url',
-            'category', 'duration', 'published_at', 'is_published',
+            'category', 'theme', 'duration', 'published_at', 'is_published',
         ]

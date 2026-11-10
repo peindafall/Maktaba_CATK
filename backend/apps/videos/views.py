@@ -15,16 +15,23 @@ video_service = VideoService()
 
 
 class VideoViewSet(viewsets.ModelViewSet):
+    # Permet aux @action(throttle_scope=...) de limiter certains endpoints (compteurs, questions)
+    throttle_scope = None
     filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
-    filterset_fields = ['category', 'is_published']
-    search_fields = ['title_fr', 'title_en', 'title_ar', 'description_fr']
+    filterset_fields = {
+        'category': ['exact'],
+        'theme': ['exact'],
+        'theme__slug': ['exact'],
+        'is_published': ['exact'],
+    }
+    search_fields = ['title_fr', 'title_en', 'title_ar', 'description_fr', 'theme__name_fr']
     ordering_fields = ['published_at', 'views_count', 'created_at']
     pagination_class = StandardResultsSetPagination
 
     def get_queryset(self):
         if self.request.user.is_authenticated and hasattr(self.request.user, 'is_admin') and self.request.user.is_admin:
-            return Video.objects.all()
-        return Video.objects.filter(is_published=True)
+            return Video.objects.all().select_related('theme')
+        return Video.objects.filter(is_published=True).select_related('theme')
 
     def get_serializer_class(self):
         if self.action == 'list':
@@ -38,7 +45,7 @@ class VideoViewSet(viewsets.ModelViewSet):
             return [IsAdminUser()]
         return [AllowAny()]
 
-    @action(detail=True, methods=['post'], permission_classes=[AllowAny])
+    @action(detail=True, methods=['post'], permission_classes=[AllowAny], throttle_scope='counters')
     def view(self, request, pk=None):
         """Incrémente le compteur de vues (appelé quand l'utilisateur clique sur Play)."""
         video = self.get_object()
@@ -48,6 +55,20 @@ class VideoViewSet(viewsets.ModelViewSet):
             {'views_count': video.views_count},
             status=status.HTTP_200_OK
         )
+
+    @action(detail=False, methods=['get'])
+    def types(self, request):
+        """Types d'émission disponibles (Al Islam, Juste une question...) avec le nombre de vidéos."""
+        from django.db.models import Count
+
+        counts = dict(
+            self.get_queryset().values_list('category').annotate(n=Count('id')).values_list('category', 'n')
+        )
+        return Response([
+            {'value': value, 'label': label, 'count': counts.get(value, 0)}
+            for value, label in Video.VIDEO_CATEGORIES
+            if counts.get(value)
+        ])
 
     @action(detail=False, methods=['get'])
     def by_category(self, request):

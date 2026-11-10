@@ -28,6 +28,7 @@ INSTALLED_APPS = [
     # Third party
     'rest_framework',
     'rest_framework_simplejwt',
+    'rest_framework_simplejwt.token_blacklist',
     'corsheaders',
     'django_filters',
     'drf_spectacular',
@@ -136,13 +137,27 @@ REST_FRAMEWORK = {
         'rest_framework.filters.OrderingFilter',
     ],
     'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
+    # Limitation du nombre de requêtes (anti brute-force / anti-spam)
+    'DEFAULT_THROTTLE_CLASSES': [
+        'rest_framework.throttling.AnonRateThrottle',
+        'rest_framework.throttling.UserRateThrottle',
+        'rest_framework.throttling.ScopedRateThrottle',
+    ],
+    'DEFAULT_THROTTLE_RATES': {
+        'anon': '300/hour',
+        'user': '2000/hour',
+        'auth': '10/minute',          # connexion / inscription / mot de passe oublié
+        'ask_question': '5/hour',     # questions envoyées par les visiteurs
+        'counters': '120/minute',     # compteurs vues / écoutes / téléchargements
+    },
 }
 
 SIMPLE_JWT = {
     'ACCESS_TOKEN_LIFETIME': timedelta(hours=1),
     'REFRESH_TOKEN_LIFETIME': timedelta(days=7),
     'ROTATE_REFRESH_TOKENS': True,
-    'BLACKLIST_AFTER_ROTATION': False,
+    'BLACKLIST_AFTER_ROTATION': True,
+    'UPDATE_LAST_LOGIN': True,
     'AUTH_HEADER_TYPES': ('Bearer',),
 }
 
@@ -156,6 +171,14 @@ SPECTACULAR_SETTINGS = {
 
 CORS_ALLOWED_ORIGINS = env.list('CORS_ALLOWED_ORIGINS', default=[])
 CORS_ALLOW_ALL_ORIGINS = env.bool('CORS_ALLOW_ALL_ORIGINS', default=False)
+CORS_EXPOSE_HEADERS = ['Content-Disposition', 'Content-Length', 'Content-Range', 'Accept-Ranges']
+
+# Au-delà de 10 Mo, les fichiers envoyés sont écrits sur disque temporaire (pas en RAM)
+DATA_UPLOAD_MAX_MEMORY_SIZE = 10 * 1024 * 1024
+FILE_UPLOAD_MAX_MEMORY_SIZE = 10 * 1024 * 1024
+
+# URL de l'admin configurable (ex : ADMIN_URL=gestion-catk-2026/) pour éviter /admin/
+ADMIN_URL = env('ADMIN_URL', default='admin/')
 
 CELERY_BROKER_URL = env('REDIS_URL', default='redis://localhost:6379/0')
 CELERY_RESULT_BACKEND = env('REDIS_URL', default='redis://localhost:6379/0')
@@ -176,22 +199,50 @@ CELERY_TIMEZONE = TIME_ZONE
 # AWS_DEFAULT_ACL = 'public-read'
 # AWS_QUERYSTRING_AUTH = False
 
-CACHES = {
-    'default': {
-        'BACKEND': 'django_redis.cache.RedisCache',
-        'LOCATION': env('REDIS_URL', default='redis://localhost:6379/1'),
-        'OPTIONS': {'CLIENT_CLASS': 'django_redis.client.DefaultClient'},
-        'TIMEOUT': 300,
+# ------------------------------------------------------------------
+# CACHE
+# Redis seulement si REDIS_URL est défini. Sinon, cache en base de données
+# (partagé entre les workers Gunicorn, contrairement à LocMemCache).
+# ⚠️ Avant ce correctif, le cache pointait vers un Redis inexistant sur Render :
+#    l'inscription créait bien le compte puis plantait en 500 (cache.set).
+# ------------------------------------------------------------------
+REDIS_URL = env('REDIS_URL', default='')
+if REDIS_URL:
+    CACHES = {
+        'default': {
+            'BACKEND': 'django_redis.cache.RedisCache',
+            'LOCATION': REDIS_URL,
+            'OPTIONS': {
+                'CLIENT_CLASS': 'django_redis.client.DefaultClient',
+                'IGNORE_EXCEPTIONS': True,
+            },
+            'TIMEOUT': 300,
+        }
     }
-}
+else:
+    CACHES = {
+        'default': {
+            'BACKEND': 'django.core.cache.backends.db.DatabaseCache',
+            'LOCATION': 'django_cache_table',
+            'TIMEOUT': 300,
+        }
+    }
 
-EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 EMAIL_HOST = env('EMAIL_HOST', default='smtp.gmail.com')
 EMAIL_PORT = env.int('EMAIL_PORT', default=587)
 EMAIL_USE_TLS = True
 EMAIL_HOST_USER = env('EMAIL_HOST_USER', default='')
 EMAIL_HOST_PASSWORD = env('EMAIL_HOST_PASSWORD', default='')
+EMAIL_TIMEOUT = 10
+# Sans identifiants SMTP, les emails sont simplement affichés dans les logs
+EMAIL_BACKEND = env(
+    'EMAIL_BACKEND',
+    default='django.core.mail.backends.smtp.EmailBackend' if EMAIL_HOST_USER
+    else 'django.core.mail.backends.console.EmailBackend',
+)
 DEFAULT_FROM_EMAIL = env('DEFAULT_FROM_EMAIL', default='noreply@catk.org')
+# Adresse qui reçoit les nouvelles questions des visiteurs (optionnel)
+QUESTIONS_NOTIFY_EMAIL = env('QUESTIONS_NOTIFY_EMAIL', default='')
 FRONTEND_URL = env('FRONTEND_URL', default='http://localhost:3000')
 
 LOCALE_PATHS = [BASE_DIR / 'locale']

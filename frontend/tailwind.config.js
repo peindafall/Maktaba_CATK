@@ -2,6 +2,9 @@
 export default {
   content: ['./index.html', './src/**/*.{js,ts,jsx,tsx}'],
   darkMode: 'class',
+  // Les effets « :hover » ne s'appliquent qu'aux appareils avec souris : sur téléphone,
+  // le premier toucher ne reste plus « bloqué » en survol (cause du double-tap).
+  future: { hoverOnlyWhenSupported: true },
   theme: {
     extend: {
       colors: {

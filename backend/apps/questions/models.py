@@ -1,4 +1,6 @@
 import uuid
+
+from django.conf import settings
 from django.db import models
 
 
@@ -15,6 +17,30 @@ class Question(models.Model):
     )
     keywords = models.TextField(blank=True, help_text='Mots-clés séparés par des virgules')
     is_published = models.BooleanField(default=False)
+
+    # --- Questions envoyées depuis le site par les visiteurs / membres ---
+    SOURCE_ADMIN = 'admin'
+    SOURCE_PUBLIC = 'public'
+    SOURCE_CHOICES = [(SOURCE_ADMIN, 'Ajoutée par l\'admin'), (SOURCE_PUBLIC, 'Envoyée par un visiteur')]
+
+    STATUS_PENDING = 'pending'
+    STATUS_ANSWERED = 'answered'
+    STATUS_REJECTED = 'rejected'
+    STATUS_CHOICES = [
+        (STATUS_PENDING, 'En attente de réponse'),
+        (STATUS_ANSWERED, 'Répondue'),
+        (STATUS_REJECTED, 'Rejetée'),
+    ]
+
+    source = models.CharField(max_length=10, choices=SOURCE_CHOICES, default=SOURCE_ADMIN)
+    status = models.CharField(max_length=10, choices=STATUS_CHOICES, default=STATUS_ANSWERED)
+    submitted_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True,
+        related_name='submitted_questions',
+    )
+    submitter_name = models.CharField('Nom du demandeur', max_length=120, blank=True)
+    submitter_email = models.EmailField('Email du demandeur', blank=True)
+    submitter_language = models.CharField(max_length=5, default='fr')
     views_count = models.PositiveIntegerField(default=0)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)

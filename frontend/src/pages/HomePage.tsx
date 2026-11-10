@@ -7,7 +7,10 @@ import { LatestVideos } from '../components/home/LatestVideos';
 import { LatestQuestions } from '../components/home/LatestQuestions';
 import { ProfessorProfile } from '../components/home/ProfessorProfile';
 
+import { usePageTitle } from '../hooks/usePageTitle';
+
 const HomePage = () => {
+  usePageTitle();
   return (
     <div>
       <HeroSection />

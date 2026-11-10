@@ -1,13 +1,13 @@
-import { useState } from 'react';
-import { motion } from 'framer-motion';
+import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Filter } from 'lucide-react';
-import { Headphones } from 'lucide-react';
+import { Headphones, SortAsc } from 'lucide-react';
 import { useAudios } from '../../hooks/useAudios';
 import { AudioCard } from './AudioCard';
 import { SkeletonList } from '../common/Skeleton';
 import { EmptyState } from '../common/EmptyState';
-import { Button } from '../common/Button';
+import { Pagination } from '../common/Pagination';
+import { ListError } from '../common/ListError';
+import { usePlayerStore } from '../../stores/playerStore';
 
 interface AudioListProps {
   categorySlug?: string;
@@ -21,67 +21,48 @@ export const AudioList = ({ categorySlug }: AudioListProps) => {
   const params: Record<string, unknown> = { page, ordering, page_size: 12 };
   if (categorySlug) params.category__slug = categorySlug;
 
-  const { data, isLoading, isError, refetch } = useAudios(params);
+  const { data, isLoading, isError, refetch, isPlaceholderData } = useAudios(params);
 
-  if (isError) {
-    return (
-      <div className="text-center py-12">
-        <p className="text-red-500 mb-4">{t('common.error')}</p>
-        <Button onClick={() => refetch()}>{t('common.retry')}</Button>
-      </div>
-    );
-  }
+  // La page courante devient la file de lecture (enchaînement automatique)
+  useEffect(() => {
+    if (data?.results?.length) usePlayerStore.setState({ queue: data.results });
+  }, [data]);
+
+  if (isError) return <ListError onRetry={() => refetch()} />;
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-6">
-        <div className="flex items-center gap-2 text-sm text-[var(--text-secondary)]">
-          <Filter size={16} />
-          {data && <span>{data.count} {t('audio.title').toLowerCase()}</span>}
-        </div>
-        <select
-          value={ordering}
-          onChange={(e) => setOrdering(e.target.value)}
-          className="input-base py-1.5 px-3 text-sm w-auto"
-        >
-          <option value="-created_at">Plus récent</option>
-          <option value="-plays_count">Plus écoutés</option>
-          <option value="title_fr">A-Z</option>
-        </select>
+      <div className="flex flex-wrap items-center justify-between gap-3 mb-6">
+        <p className="text-sm text-[var(--text-secondary)]">{data && t('audio.count', { count: data.count })}</p>
+        <label className="flex items-center gap-2">
+          <SortAsc size={16} className="text-[var(--text-secondary)]" />
+          <select
+            value={ordering}
+            onChange={(e) => {
+              setOrdering(e.target.value);
+              setPage(1);
+            }}
+            className="input-base py-2 px-3 w-auto"
+          >
+            <option value="-created_at">{t('audio.sort_newest')}</option>
+            <option value="-plays_count">{t('audio.sort_popular')}</option>
+            <option value="title_fr">{t('audio.sort_az')}</option>
+          </select>
+        </label>
       </div>
 
       {isLoading ? (
-        <SkeletonList count={12} />
+        <SkeletonList count={8} />
       ) : !data?.results.length ? (
-        <EmptyState icon={<Headphones />} title={t('audio.no_audios')} />
+        <EmptyState icon={<Headphones className="w-full h-full" />} title={t('audio.no_audios')} />
       ) : (
         <>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            {data.results.map((audio, i) => (
-              <motion.div
-                key={audio.id}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: i * 0.05 }}
-              >
-                <AudioCard audio={audio} />
-              </motion.div>
+          <div className={`grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6 transition-opacity ${isPlaceholderData ? 'opacity-60' : ''}`}>
+            {data.results.map((audio) => (
+              <AudioCard key={audio.id} audio={audio} />
             ))}
           </div>
-
-          {data.total_pages > 1 && (
-            <div className="flex items-center justify-center gap-3 mt-10">
-              <Button variant="outline" size="sm" onClick={() => setPage((p) => Math.max(1, p - 1))} disabled={page === 1}>
-                {t('common.previous')}
-              </Button>
-              <span className="text-sm text-[var(--text-secondary)]">
-                {t('common.page')} {page} {t('common.of')} {data.total_pages}
-              </span>
-              <Button variant="outline" size="sm" onClick={() => setPage((p) => Math.min(data.total_pages, p + 1))} disabled={page === data.total_pages}>
-                {t('common.next')}
-              </Button>
-            </div>
-          )}
+          <Pagination page={page} totalPages={data.total_pages} onChange={setPage} />
         </>
       )}
     </div>

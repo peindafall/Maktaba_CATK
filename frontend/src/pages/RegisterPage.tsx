@@ -1,37 +1,57 @@
 import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useLocation, useNavigate, Navigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { motion } from 'framer-motion';
-import { Mail, Lock, User } from 'lucide-react';
+import { Mail, User } from 'lucide-react';
+import type { AxiosError } from 'axios';
 import { useAuth } from '../hooks/useAuth';
 import { Input } from '../components/common/Input';
+import { PasswordInput } from '../components/common/PasswordInput';
 import { Button } from '../components/common/Button';
-import Logo from '../assets/logo.png';
-import { validateEmail, validatePassword, validatePasswordMatch } from '../utils/validators';
+import { AuthCard, FormError } from '../components/common/AuthCard';
+import { extractApiErrors } from '../services/api';
+import { toast } from '../stores/toastStore';
+import { validateEmail, validatePassword, validatePasswordMatch, isNumericOnly } from '../utils/validators';
+import { usePageTitle } from '../hooks/usePageTitle';
+
+type Field = 'email' | 'username' | 'password' | 'password_confirm';
 
 const RegisterPage = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const { registerMutation } = useAuth();
-  const [form, setForm] = useState({
-    email: '',
-    username: '',
-    password: '',
-    password_confirm: '',
-  });
-  const [errors, setErrors] = useState<Record<string, string>>({});
+  const location = useLocation();
+  const from = (location.state as { from?: string } | null)?.from || '/';
+  const { registerMutation, isAuthenticated } = useAuth();
+  const [form, setForm] = useState({ email: '', username: '', password: '', password_confirm: '' });
+  const [errors, setErrors] = useState<Partial<Record<Field, string>>>({});
   const [apiError, setApiError] = useState('');
+  usePageTitle(t('auth.register_title'));
+
+  if (isAuthenticated && !registerMutation.isPending) return <Navigate to={from} replace />;
 
   const validate = () => {
-    const errs: Record<string, string> = {};
-    if (!validateEmail(form.email)) errs.email = 'Email invalide';
-    if (!form.username.trim()) errs.username = 'Nom d\'utilisateur requis';
-    if (!validatePassword(form.password)) errs.password = 'Mot de passe trop court (min 8 caractères)';
-    if (!validatePasswordMatch(form.password, form.password_confirm)) {
-      errs.password_confirm = 'Les mots de passe ne correspondent pas';
-    }
+    const errs: Partial<Record<Field, string>> = {};
+    if (!validateEmail(form.email)) errs.email = t('auth.errors.invalid_email');
+    if (form.username.trim().length < 2) errs.username = t('auth.errors.username_required');
+    if (!validatePassword(form.password)) errs.password = t('auth.errors.password_short');
+    else if (isNumericOnly(form.password)) errs.password = t('auth.errors.password_weak');
+    if (!validatePasswordMatch(form.password, form.password_confirm)) errs.password_confirm = t('auth.errors.password_mismatch');
     setErrors(errs);
     return Object.keys(errs).length === 0;
+  };
+
+  /** Traduit les erreurs du serveur dans la langue de l'utilisateur. */
+  const mapServerErrors = (err: unknown) => {
+    const status = (err as AxiosError)?.response?.status;
+    if (status === 429) return setApiError(t('auth.errors.too_many'));
+    const api = extractApiErrors(err);
+    if (api.non_field_errors?.[0] === '__network__') return setApiError(t('auth.errors.network'));
+    const next: Partial<Record<Field, string>> = {};
+    if (api.email) next.email = /exist|déjà|already/i.test(api.email[0]) ? t('auth.errors.email_taken') : t('auth.errors.invalid_email');
+    if (api.username) next.username = /pris|exist|taken/i.test(api.username[0]) ? t('auth.errors.username_taken') : t('auth.errors.username_required');
+    if (api.password) next.password = t('auth.errors.password_weak');
+    if (api.password_confirm) next.password_confirm = t('auth.errors.password_mismatch');
+    setErrors(next);
+    if (!Object.keys(next).length) setApiError(t('auth.errors.generic'));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -40,110 +60,85 @@ const RegisterPage = () => {
     if (!validate()) return;
     try {
       await registerMutation.mutateAsync(form);
-      navigate('/');
-    } catch (err: any) {
-      // Afficher le message d'erreur exact renvoyé par le backend
-      const backendData = err?.response?.data;
-      let message = 'Une erreur s\'est produite. Veuillez réessayer.';
-      if (backendData) {
-        if (typeof backendData === 'string') {
-          message = backendData;
-        } else if (backendData.detail) {
-          message = backendData.detail;
-        } else if (backendData.email) {
-          message = `Email : ${Array.isArray(backendData.email) ? backendData.email.join(', ') : backendData.email}`;
-        } else if (backendData.username) {
-          message = `Nom d'utilisateur : ${Array.isArray(backendData.username) ? backendData.username.join(', ') : backendData.username}`;
-        } else if (backendData.password) {
-          message = `Mot de passe : ${Array.isArray(backendData.password) ? backendData.password.join(', ') : backendData.password}`;
-        } else {
-          // Premier champ d'erreur
-          const firstKey = Object.keys(backendData)[0];
-          if (firstKey) {
-            const val = backendData[firstKey];
-            message = `${firstKey} : ${Array.isArray(val) ? val.join(', ') : val}`;
-          }
-        }
-      }
-      setApiError(message);
+      toast.success(t('auth.register_success'));
+      navigate(from, { replace: true });
+    } catch (err) {
+      mapServerErrors(err);
     }
   };
 
-  const set = (field: string, value: string) => setForm((f) => ({ ...f, [field]: value }));
+  const set = (field: Field, value: string) => {
+    setForm((f) => ({ ...f, [field]: value }));
+    if (errors[field]) setErrors((e) => ({ ...e, [field]: undefined }));
+  };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-[var(--background)] px-4 py-8">
-      <motion.div
-        initial={{ opacity: 0, y: 30 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="w-full max-w-md"
-      >
-        <div className="text-center mb-8">
-          <Link to="/">
-            <img src={Logo} alt="Maktaba CATK" className="h-28 w-auto mx-auto mb-2" />
-          </Link>
-          <h1 className="text-2xl font-bold text-[var(--text-primary)]">{t('auth.register_title')}</h1>
+    <AuthCard title={t('auth.register_title')}>
+      <form onSubmit={handleSubmit} className="space-y-5" noValidate>
+        <Input
+          type="email"
+          inputMode="email"
+          label={t('auth.email')}
+          value={form.email}
+          onChange={(e) => set('email', e.target.value)}
+          placeholder={t('auth.email_placeholder')}
+          leftIcon={<Mail size={16} />}
+          error={errors.email}
+          autoComplete="email"
+          autoCapitalize="none"
+          required
+        />
+        {errors.email === t('auth.errors.email_taken') && (
+          <p className="-mt-3 text-sm">
+            <Link to="/connexion" className="text-primary font-semibold hover:underline">{t('auth.login_btn')}</Link>
+            {' · '}
+            <Link to="/mot-de-passe-oublie" className="text-primary hover:underline">{t('auth.forgot_password')}</Link>
+          </p>
+        )}
+        <Input
+          type="text"
+          label={t('auth.username')}
+          value={form.username}
+          onChange={(e) => set('username', e.target.value)}
+          leftIcon={<User size={16} />}
+          error={errors.username}
+          autoComplete="username"
+          required
+        />
+        <div>
+          <PasswordInput
+            label={t('auth.password')}
+            value={form.password}
+            onChange={(e) => set('password', e.target.value)}
+            error={errors.password}
+            autoComplete="new-password"
+            required
+          />
+          {!errors.password && <p className="mt-1.5 text-xs text-[var(--text-secondary)]">{t('auth.password_hint')}</p>}
         </div>
+        <PasswordInput
+          label={t('auth.confirm_password')}
+          value={form.password_confirm}
+          onChange={(e) => set('password_confirm', e.target.value)}
+          error={errors.password_confirm}
+          autoComplete="new-password"
+          required
+        />
 
-        <div className="card p-8">
-          <form onSubmit={handleSubmit} className="space-y-5">
-            <Input
-              type="email"
-              label={t('auth.email')}
-              value={form.email}
-              onChange={(e) => set('email', e.target.value)}
-              leftIcon={<Mail size={16} />}
-              error={errors.email}
-              required
-            />
-            <Input
-              type="text"
-              label={t('auth.username')}
-              value={form.username}
-              onChange={(e) => set('username', e.target.value)}
-              leftIcon={<User size={16} />}
-              error={errors.username}
-              required
-            />
-            <Input
-              type="password"
-              label={t('auth.password')}
-              value={form.password}
-              onChange={(e) => set('password', e.target.value)}
-              leftIcon={<Lock size={16} />}
-              error={errors.password}
-              required
-            />
-            <Input
-              type="password"
-              label={t('auth.confirm_password')}
-              value={form.password_confirm}
-              onChange={(e) => set('password_confirm', e.target.value)}
-              leftIcon={<Lock size={16} />}
-              error={errors.password_confirm}
-              required
-            />
+        <FormError message={apiError} />
 
-            {apiError && (
-              <p className="text-sm text-red-500 bg-red-50 px-4 py-2 rounded-xl">{apiError}</p>
-            )}
+        <Button type="submit" className="w-full" isLoading={registerMutation.isPending}>
+          {t('auth.register_btn')}
+        </Button>
+      </form>
 
-            <Button type="submit" className="w-full" isLoading={registerMutation.isPending}>
-              {t('auth.register_btn')}
-            </Button>
-          </form>
-
-          <div className="mt-6 text-center">
-            <p className="text-sm text-[var(--text-secondary)]">
-              {t('auth.has_account')}{' '}
-              <Link to="/connexion" className="text-primary font-semibold hover:underline">
-                {t('auth.login_btn')}
-              </Link>
-            </p>
-          </div>
-        </div>
-      </motion.div>
-    </div>
+      <p className="mt-6 text-center text-sm text-[var(--text-secondary)]">
+        {t('auth.has_account')}{' '}
+        <Link to="/connexion" state={{ from }} className="text-primary font-semibold hover:underline">
+          {t('auth.login_btn')}
+        </Link>
+      </p>
+    </AuthCard>
   );
 };
 

@@ -1,6 +1,5 @@
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
-from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 
 from apps.teachings.views import TeachingViewSet
 from apps.documents.views import DocumentViewSet
@@ -12,8 +11,12 @@ from apps.users.views import (
     BadgeViewSet,
     CollectionViewSet,
     FavoriteViewSet,
+    LoginView,
+    LogoutView,
     PaymentViewSet,
+    RefreshView,
     RegisterView,
+    ResetPasswordConfirmView,
     ResetPasswordView,
     SubscriptionPlanViewSet,
     SubscriptionViewSet,
@@ -25,6 +28,8 @@ from apps.users.views import (
 )
 from apps.search.views import GlobalSearchView
 from apps.analytics.views import DashboardStatsView
+from apps.core.views import health
+from apps.categories.views import VideoThemeListView
 
 router = DefaultRouter()
 router.register('teachings', TeachingViewSet, basename='teaching')
@@ -45,11 +50,15 @@ router.register('badges', BadgeViewSet, basename='badge')
 router.register('user-badges', UserBadgeViewSet, basename='user-badge')
 
 urlpatterns = router.urls + [
-    path('auth/login/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
-    path('auth/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
+    path('health/', health, name='health'),
+    path('auth/login/', LoginView.as_view(), name='token_obtain_pair'),
+    path('auth/refresh/', RefreshView.as_view(), name='token_refresh'),
+    path('auth/logout/', LogoutView.as_view(), name='logout'),
     path('auth/register/', RegisterView.as_view(), name='register'),
     path('auth/verify-email/', VerifyEmailView.as_view(), name='verify_email'),
     path('auth/reset-password/', ResetPasswordView.as_view(), name='reset_password'),
+    path('auth/reset-password/confirm/', ResetPasswordConfirmView.as_view(), name='reset_password_confirm'),
+    path('video-themes/', VideoThemeListView.as_view(), name='video_themes'),
     path('search/', GlobalSearchView.as_view(), name='global_search'),
     path('dashboard/stats/', DashboardStatsView.as_view(), name='dashboard_stats'),
 ]

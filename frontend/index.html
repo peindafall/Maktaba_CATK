@@ -2,26 +2,43 @@
 <html lang="fr" class="dark">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/png" href="/logo.png" />
-    <link rel="apple-touch-icon" href="/logo.png" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="description" content="Maktaba CATK - Bibliothèque Numérique des Enseignements du Professeur Cheikh Ahmet Tidiane KEBE" />
-    <meta name="theme-color" content="#1EA478" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <title>Maktaba CATK</title>
+    <meta name="description" content="Maktaba CATK - Bibliothèque numérique des enseignements du Professeur Cheikh Ahmet Tidiane KEBE : enseignements PDF, audios, émissions et questions/réponses." />
+
+    <!-- Icônes : logo de l'entreprise (onglet, écran d'accueil iPhone / Android) -->
+    <link rel="icon" href="/favicon.ico" sizes="any" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
+    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
+    <link rel="manifest" href="/site.webmanifest" />
+    <meta name="theme-color" content="#121212" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="Maktaba CATK" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="format-detection" content="telephone=no" />
+
+    <!-- Partage (WhatsApp, Facebook...) -->
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="Maktaba CATK" />
+    <meta property="og:title" content="Maktaba CATK — Bibliothèque numérique islamique" />
+    <meta property="og:description" content="Enseignements, audios, émissions et questions/réponses du Professeur Cheikh Ahmet Tidiane KEBE." />
+    <meta property="og:image" content="/og-image.jpg" />
+    <meta name="twitter:card" content="summary_large_image" />
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link rel="preconnect" href="https://maktaba-catk.onrender.com" crossorigin />
+
     <!-- Fond sombre dès le chargement initial pour éviter tout flash blanc -->
     <style>
-      html, body {
-        background-color: #121212;
-        color: #F5F5F5;
-        margin: 0;
-      }
-      html:not(.dark), html:not(.dark) body {
-        background-color: #F8F9FA;
-        color: #1A1A1A;
-      }
+      html, body { background-color: #121212; color: #F5F5F5; margin: 0; }
+      html:not(.dark), html:not(.dark) body { background-color: #F8F9FA; color: #1A1A1A; }
     </style>
   </head>
   <body>
+    <noscript>Activez JavaScript pour utiliser Maktaba CATK.</noscript>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>

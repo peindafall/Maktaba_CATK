@@ -28,11 +28,11 @@ export const SearchBar = ({ defaultValue = '', autoFocus, className }: SearchBar
   };
 
   return (
-    <form onSubmit={handleSubmit} className={className}>
+    <form onSubmit={handleSubmit} className={className} role="search">
       <div className="relative">
         <Search
           size={18}
-          className="absolute left-4 top-1/2 -translate-y-1/2 text-[var(--text-secondary)]"
+          className="absolute start-4 top-1/2 -translate-y-1/2 text-[var(--text-secondary)]"
         />
         <input
           ref={inputRef}
@@ -41,13 +41,14 @@ export const SearchBar = ({ defaultValue = '', autoFocus, className }: SearchBar
           onChange={(e) => setValue(e.target.value)}
           placeholder={t('search.placeholder')}
           autoFocus={autoFocus}
-          className="input-base pl-11 pr-10 py-3 text-base"
+          className="input-base ps-11 pe-10 py-3 text-base"
         />
         {value && (
           <button
             type="button"
             onClick={handleClear}
-            className="absolute right-3 top-1/2 -translate-y-1/2 p-1 rounded-full hover:bg-[var(--border-light)] transition-colors"
+            aria-label="Effacer"
+            className="absolute end-3 top-1/2 -translate-y-1/2 p-1 rounded-full hover:bg-[var(--border-light)] transition-colors"
           >
             <X size={14} />
           </button>

@@ -1,11 +1,14 @@
 from django.contrib import admin
+from django.utils.html import format_html
 from .models import Video
 
 
 @admin.register(Video)
 class VideoAdmin(admin.ModelAdmin):
-    list_display = ['title_fr', 'category', 'youtube_id', 'views_count', 'is_published', 'published_at']
-    list_filter = ['category', 'is_published']
+    list_display = ['title_fr', 'category', 'theme', 'youtube_id', 'views_count', 'is_published', 'published_at']
+    list_filter = ['category', 'theme', 'is_published']
+    list_editable = ['theme']
+    autocomplete_fields = ['theme']
     search_fields = ['title_fr', 'title_en', 'title_ar', 'youtube_id']
     list_per_page = 25
     # On retire youtube_id et thumbnail_url des readonly pour pouvoir les voir
@@ -24,7 +27,7 @@ class VideoAdmin(admin.ModelAdmin):
             'fields': ('youtube_url', 'youtube_id_display', 'thumbnail_display', 'duration')
         }),
         ('Métadonnées', {
-            'fields': ('category', 'published_at', 'is_published')
+            'fields': ('category', 'theme', 'published_at', 'is_published')
         }),
         ('Informations', {
             'fields': ('id', 'views_count', 'created_at', 'updated_at'),
@@ -38,10 +41,12 @@ class VideoAdmin(admin.ModelAdmin):
 
     def thumbnail_display(self, obj):
         if obj.thumbnail_url:
-            return f'<a href="{obj.thumbnail_url}" target="_blank">{obj.thumbnail_url}</a>'
+            return format_html(
+                '<a href="{}" target="_blank" rel="noopener"><img src="{}" style="height:90px;border-radius:8px"></a>',
+                obj.thumbnail_url, obj.thumbnail_url,
+            )
         return "Pas encore généré (enregistrez pour générer)"
     thumbnail_display.short_description = "Thumbnail URL (auto)"
-    thumbnail_display.allow_tags = True
 
     def publish_videos(self, request, queryset):
         queryset.update(is_published=True)
