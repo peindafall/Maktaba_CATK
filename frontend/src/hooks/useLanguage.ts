@@ -6,6 +6,11 @@ export const useLanguage = () => {
   const current = ((i18n.resolvedLanguage || i18n.language || 'fr').split('-')[0] as AppLanguage) || 'fr';
 
   const changeLanguage = (lang: AppLanguage) => {
+    try {
+      localStorage.setItem('catk-lang-chosen', '1'); // choix explicite : on le respecte ensuite
+    } catch {
+      /* ignore */
+    }
     i18n.changeLanguage(lang);
   };
 

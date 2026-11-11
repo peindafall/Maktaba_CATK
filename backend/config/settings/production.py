@@ -59,7 +59,7 @@ ENABLE_API_DOCS = env.bool('ENABLE_API_DOCS', default=True)
 # --- FICHIERS MÉDIAS ---
 # ⚠️ Le disque d'un service Render gratuit est EFFACÉ à chaque redéploiement / mise en veille :
 # tout fichier envoyé depuis l'admin (couvertures, PDF, audios) finit par disparaître (=> erreurs 404).
-# Solution : un stockage objet compatible S3 (Cloudflare R2, Supabase Storage, Backblaze B2, AWS S3...).
+# Solution : un stockage objet compatible S3 (Supabase Storage gratuit sans carte, Cloudflare R2, Backblaze B2...).
 # Il suffit de définir les variables AWS_* ci-dessous sur Render ; sinon on garde le disque local.
 AWS_STORAGE_BUCKET_NAME = os.environ.get('AWS_STORAGE_BUCKET_NAME', '')
 
@@ -68,7 +68,11 @@ if AWS_STORAGE_BUCKET_NAME:
     AWS_SECRET_ACCESS_KEY = os.environ.get('AWS_SECRET_ACCESS_KEY', '')
     AWS_S3_ENDPOINT_URL = os.environ.get('AWS_S3_ENDPOINT_URL') or None
     AWS_S3_REGION_NAME = os.environ.get('AWS_S3_REGION_NAME', 'auto')
-    AWS_S3_CUSTOM_DOMAIN = os.environ.get('AWS_S3_CUSTOM_DOMAIN') or None  # domaine public du bucket
+    # Supabase Storage exige l'adressage « path » (https://endpoint/bucket/fichier) : AWS_S3_ADDRESSING_STYLE=path
+    AWS_S3_ADDRESSING_STYLE = os.environ.get('AWS_S3_ADDRESSING_STYLE') or None
+    # Adresse publique des fichiers, SANS https:// ni / final. Exemple Supabase :
+    #   <ref>.supabase.co/storage/v1/object/public/maktaba-media
+    AWS_S3_CUSTOM_DOMAIN = (os.environ.get('AWS_S3_CUSTOM_DOMAIN') or '').replace('https://', '').strip('/') or None
     AWS_S3_FILE_OVERWRITE = False
     AWS_DEFAULT_ACL = None
     AWS_QUERYSTRING_AUTH = not bool(AWS_S3_CUSTOM_DOMAIN)  # URLs signées si le bucket n'est pas public

@@ -117,6 +117,8 @@ export interface Question {
   answers?: Answer[];
   answers_count?: number;
   has_audio?: boolean;
+  /** Première réponse audio (liste) : pour écouter sans ouvrir la question */
+  audio_answer?: { id: string; audio_url: string; language: string } | null;
   source?: 'admin' | 'public';
   views_count: number;
   created_at?: string;

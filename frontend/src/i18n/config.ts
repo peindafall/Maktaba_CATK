@@ -17,6 +17,14 @@ const applyDirection = (lng: string) => {
   document.documentElement.lang = base;
 };
 
+// Une seule fois : les visiteurs déjà venus avaient reçu la langue du téléphone automatiquement.
+// Tant qu'ils n'ont pas choisi eux-mêmes une langue, on les remet en français.
+try {
+  if (!localStorage.getItem('catk-lang-chosen')) localStorage.setItem('i18nextLng', 'fr');
+} catch {
+  /* navigation privée */
+}
+
 i18n
   .use(LanguageDetector)
   .use(initReactI18next)
@@ -31,8 +39,10 @@ i18n
     nonExplicitSupportedLngs: true, // "en-US" -> "en"
     load: 'languageOnly',
     interpolation: { escapeValue: false },
+    // Langue par défaut : FRANÇAIS pour un nouveau visiteur (avant : langue du téléphone, d'où
+    // « The server is waking up » en anglais). Le choix fait avec le globe est ensuite mémorisé.
     detection: {
-      order: ['localStorage', 'navigator'],
+      order: ['localStorage'],
       lookupLocalStorage: 'i18nextLng',
       caches: ['localStorage'],
     },

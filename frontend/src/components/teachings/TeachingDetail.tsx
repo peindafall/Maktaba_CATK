@@ -109,7 +109,7 @@ export const TeachingDetail = ({ teaching }: TeachingDetailProps) => {
         </div>
 
         {showPDF && teaching.pdf_file_url && (
-          <div ref={pdfSectionRef} className="border-t border-[var(--border-light)] pt-6 scroll-mt-20">
+          <div ref={pdfSectionRef} className="border-t border-[var(--border-light)] pt-6 scroll-mt-20 -mx-3 sm:mx-0">
             <Suspense fallback={<div className="py-16 flex justify-center"><Spinner size="lg" /></div>}>
               <PDFViewer fileUrl={teachingService.getReadUrl(teaching.id)} />
             </Suspense>
